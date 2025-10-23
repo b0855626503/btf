@@ -1,0 +1,26 @@
+{
+    "name": "gametech/integrations",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Boat",
+            "email": "b0855626503@gmail.com"
+        }
+    ],
+    "require": {
+    },
+    "autoload": {
+        "psr-4": {
+            "Gametech\\Integrations\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Gametech\\Integrations\\Providers\\IntegrationsServiceProvider"
+            ],
+            "aliases": {}
+        }
+    },
+    "minimum-stability": "dev"
+}

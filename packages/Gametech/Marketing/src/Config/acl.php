@@ -1,0 +1,167 @@
+<?php
+
+return [
+    [
+        'key' => 'marketing',
+        'name' => 'Marketing',
+        'route' => 'admin.marketing_team.index',
+        'sort' => 86,
+    ],
+    [
+        'key' => 'marketing.marketing_team',
+        'name' => 'Teams',
+        'route' => 'admin.marketing_team.index',
+        'sort' => 1,
+    ],
+    [
+        'key' => 'marketing.marketing_team.create',
+        'name' => 'เพิ่มข้อมูล Teams',
+        'route' => 'admin.marketing_team.create',
+        'sort' => 2,
+    ],
+    [
+        'key' => 'marketing.marketing_team.update',
+        'name' => 'แก้ไข Teams',
+        'route' => 'admin.marketing_team.update',
+        'sort' => 3,
+    ],
+    [
+        'key' => 'marketing.marketing_team.delete',
+        'name' => 'ลบ Teams',
+        'route' => 'admin.marketing_team.delete',
+        'sort' => 4,
+    ],
+    [
+        'key' => 'marketing.marketing_campaign',
+        'name' => 'Campaigns',
+        'route' => 'admin.marketing_campaign.index',
+        'sort' => 2,
+    ],
+    [
+        'key' => 'marketing.marketing_campaign.create',
+        'name' => 'เพิ่มข้อมูล Campaigns',
+        'route' => 'admin.marketing_campaign.create',
+        'sort' => 1,
+    ],
+    [
+        'key' => 'marketing.marketing_campaign.update',
+        'name' => 'แก้ไข Campaigns',
+        'route' => 'admin.marketing_campaign.update',
+        'sort' => 2,
+    ],
+    [
+        'key' => 'marketing.marketing_campaign.delete',
+        'name' => 'ลบ Campaigns',
+        'route' => 'admin.marketing_campaign.delete',
+        'sort' => 3,
+    ],
+    [
+        'key' => 'marketing.registration_link',
+        'name' => 'Registration Links',
+        'route' => 'admin.registration_link.index',
+        'sort' => 3,
+    ],
+    [
+        'key' => 'marketing.marketing_campaign.dashboard',
+        'name' => 'รายงาน Campaigns',
+        'route' => '',
+        'sort' => 4,
+    ],
+    [
+        'key' => 'marketing.marketing_campaign.dashboard.view',
+        'name' => 'ดูรายงาน Campaigns',
+        'route' => 'admin.marketing_campaign.view',
+        'sort' => 1,
+    ],
+//    [
+//        'key' => 'marketing.marketing_campaign.dashboard.regis_all',
+//        'name' => 'เห็น ยอดสมัครทั้งหมด',
+//        'route' => '',
+//        'sort' => 2,
+//    ],
+//    [
+//        'key' => 'marketing.marketing_campaign.dashboard.regis_today',
+//        'name' => 'เห็น ยอดสมัครวันนี้',
+//        'route' => '',
+//        'sort' => 3,
+//    ],
+//    [
+//        'key' => 'marketing.marketing_campaign.dashboard.deposit_all',
+//        'name' => 'เห็น ยอดฝากทั้งหมด',
+//        'route' => '',
+//        'sort' => 4,
+//    ],
+//    [
+//        'key' => 'marketing.marketing_campaign.dashboard.deposit_today',
+//        'name' => 'เห็น ยอดฝากวันนี้',
+//        'route' => '',
+//        'sort' => 5,
+//    ],
+//    [
+//        'key' => 'marketing.marketing_campaign.dashboard.withdraw_all',
+//        'name' => 'เห็น ยอดถอนทั้งหมด',
+//        'route' => '',
+//        'sort' => 6,
+//    ],
+//    [
+//        'key' => 'marketing.marketing_campaign.dashboard.withdraw_today',
+//        'name' => 'เห็น ยอดถอนทันนี้',
+//        'route' => '',
+//        'sort' => 7,
+//    ],
+//    [
+//        'key' => 'marketing.marketing_campaign.dashboard.click_all',
+//        'name' => 'เห็น ยอดคลิ๊กทั้งหมด',
+//        'route' => '',
+//        'sort' => 8,
+//    ],
+//    [
+//        'key' => 'marketing.marketing_campaign.dashboard.click_today',
+//        'name' => 'เห็น ยอดคลิ๊กวันนี้',
+//        'route' => '',
+//        'sort' => 9,
+//    ],
+//    [
+//        'key' => 'marketing.marketing_campaign.dashboard.regis_per_day',
+//        'name' => 'เห็น กราฟยอดสมัคร / วัน',
+//        'route' => '',
+//        'sort' => 10,
+//    ],
+//    [
+//        'key' => 'marketing.marketing_campaign.dashboard.dw_per_day',
+//        'name' => 'เห็น กราฟยอดฝาก-ถอน / วัน',
+//        'route' => '',
+//        'sort' => 11,
+//    ],
+//    [
+//        'key' => 'marketing.marketing_campaign.dashboard.click_per_day',
+//        'name' => 'เห็น กราฟยอดคลิ๊ก / วัน',
+//        'route' => '',
+//        'sort' => 12,
+//    ],
+//    [
+//        'key' => 'marketing.marketing_campaign.dashboard.member_list',
+//        'name' => 'เห็น รายการสมาชิก',
+//        'route' => '',
+//        'sort' => 13,
+//    ],
+//    [
+//        'key' => 'marketing.marketing_campaign.dashboard.member_list_deposit',
+//        'name' => 'เห็น รายการสมาชิก ฝาก',
+//        'route' => '',
+//        'sort' => 14,
+//    ],
+//    [
+//        'key' => 'marketing.marketing_campaign.dashboard.member_list_withdraw',
+//        'name' => 'เห็น รายการสมาชิก ถอน',
+//        'route' => '',
+//        'sort' => 15,
+//    ],
+//    [
+//        'key' => 'marketing.marketing_campaign.dashboard.member_list_first',
+//        'name' => 'เห็น รายการสมาชิก ฝากแรก',
+//        'route' => '',
+//        'sort' => 16,
+//    ],
+
+];

@@ -1,0 +1,9 @@
+{
+    "compilerOptions": {
+        "baseUrl": "packages/Gametech/Admin",
+        "paths": {
+            "@/*": ["src/Resources/assets/js/*"]
+        }
+    },
+    "exclude": ["node_modules", "public"]
+}

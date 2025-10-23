@@ -1,0 +1,80 @@
+{
+    "admin": { "disabled": true },
+    "apps": {
+        "frankenphp": { "num_threads": 1, "max_threads": 5 },
+        "http": {
+            "http_port": 7001,
+            "servers": {
+                "srv0": {
+                    "listen": [":7001"],
+                    "routes": [
+                        {
+                            "handle": [
+                                {
+                                    "handler": "vars",
+                                    "root": "/home/www/core/demo/public"
+                                },
+                                {
+                                    "encodings": {
+                                        "br": {},
+                                        "gzip": {},
+                                        "zstd": {}
+                                    },
+                                    "handler": "encode",
+                                    "prefer": ["zstd", "br", "gzip"]
+                                }
+                            ]
+                        },
+                        {
+                            "match": [
+                                {
+                                    "file": {
+                                        "try_files": [
+                                            "/home/www/core/demo/public",
+                                            "index.php"
+                                        ],
+                                        "try_policy": "first_exist_fallback",
+                                        "split_path": [".php"]
+                                    }
+                                }
+                            ],
+                            "handle": [
+                                {
+                                    "handler": "rewrite",
+                                    "uri": "{http.matchers.file.relative}"
+                                }
+                            ]
+                        },
+                        {
+                            "match": [{ "path": ["*.php"] }],
+                            "handle": [
+                                {
+                                    "handler": "php",
+                                    "root": "/home/www/core/demo/public",
+                                    "split_path": [".php"]
+                                }
+                            ]
+                        },
+                        {
+                            "handle": [
+                                {
+                                    "handler": "file_server",
+                                    "root": "/home/www/core/demo/public"
+                                }
+                            ]
+                        },
+                        {
+                            "handle": [
+                                {
+                                    "handler": "file_server",
+                                    "hide": ["./Caddyfile"]
+                                }
+                            ]
+                        }
+                    ],
+                    "automatic_https": { "disable": true }
+                }
+            }
+        }
+    }
+}

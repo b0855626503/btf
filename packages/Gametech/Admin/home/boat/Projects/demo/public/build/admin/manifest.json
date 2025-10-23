@@ -1,0 +1,32 @@
+{
+  "../../../node_modules/.pnpm/laravel-echo@1.19.0/node_modules/laravel-echo/dist/echo.js": {
+    "file": "assets/echo-Ys6Qbyny.js",
+    "name": "echo",
+    "src": "../../../node_modules/.pnpm/laravel-echo@1.19.0/node_modules/laravel-echo/dist/echo.js",
+    "isDynamicEntry": true,
+    "imports": [
+      "src/Resources/assets/js/app.js"
+    ]
+  },
+  "_pusher-DJxqVQQ9.js": {
+    "file": "assets/pusher-DJxqVQQ9.js",
+    "name": "pusher",
+    "isDynamicEntry": true,
+    "imports": [
+      "src/Resources/assets/js/app.js"
+    ]
+  },
+  "src/Resources/assets/js/app.js": {
+    "file": "assets/packages/Gametech/Admin/src/Resources/assets/js/app.js-BsciUfvF.js",
+    "name": "packages/Gametech/Admin/src/Resources/assets/js/app.js",
+    "src": "src/Resources/assets/js/app.js",
+    "isEntry": true,
+    "dynamicImports": [
+      "_pusher-DJxqVQQ9.js",
+      "../../../node_modules/.pnpm/laravel-echo@1.19.0/node_modules/laravel-echo/dist/echo.js"
+    ],
+    "css": [
+      "assets/app-CZSK-Mq3.css"
+    ]
+  }
+}

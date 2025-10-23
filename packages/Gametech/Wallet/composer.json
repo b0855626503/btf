@@ -1,0 +1,26 @@
+{
+    "name": "gametech/wallet",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Boat",
+            "email": "b0855626503@gmail.com"
+        }
+    ],
+    "require": {
+    },
+    "autoload": {
+        "psr-4": {
+            "Gametech\\Wallet\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Gametech\\Wallet\\Providers\\WalletServiceProvider"
+            ],
+            "aliases": {}
+        }
+    },
+    "minimum-stability": "dev"
+}

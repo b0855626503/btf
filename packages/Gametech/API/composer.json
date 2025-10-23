@@ -1,0 +1,32 @@
+{
+    "name": "gametech/api",
+    "type": "library",
+    "description": "description",
+    "license": "MIT",
+
+    "authors": [
+        {
+            "name": "Boat",
+            "email": "b0855626503@gmail.com"
+        }
+    ],
+    "require": {
+    },
+
+    "autoload": {
+        "psr-4": {
+            "Gametech\\API\\": "src/"
+        }
+    },
+
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Gametech\\API\\Providers\\APIServiceProvider"
+            ],
+            "aliases": {}
+        }
+    },
+
+    "minimum-stability": "dev"
+}

@@ -1,0 +1,5 @@
+@include('wallet::header.navbar')
+@include('wallet::header.gridtop')
+@include('wallet::header.balance')
+@include('wallet::header.menu')
+@include('wallet::header.content')

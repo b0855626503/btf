@@ -1,0 +1,46 @@
+{
+	frankenphp {
+		num_threads 1
+		max_threads 15
+		php_ini {
+			opcache.preload /home/www/core/demo/preload.php
+			opcache.preload_user nginx
+		}
+	}
+	order php_server before file_server
+	auto_https off
+	admin off
+	log {
+		output file /home/www/core/demo/storage/logs/Caddy.log {
+			roll_size 10mb
+			roll_keep 5
+			roll_keep_for 72h
+		}
+		level ERROR
+	}
+}
+
+:7001 {
+	root * /home/www/core/demo/public
+
+	# บีบอัดไฟล์ให้ browser รองรับ
+	encode zstd br gzip
+
+	@static_with_js {
+		path_regexp static_with_js \.(js|css|png|jpg|jpeg|gif|svg|woff2?)$
+		not path_regexp ^/lang-[a-z]{2}\.js$
+	}
+
+	handle @static_with_js {
+		file_server
+	}
+
+	handle {
+		php_server {
+			try_files {path} /index.php
+		}
+	}
+
+	# Serve static files ปกติ (fallback)
+	file_server
+}
