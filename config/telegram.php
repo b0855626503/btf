@@ -39,7 +39,7 @@ return [
 
         ],
         'announce' => [
-            'token'               => "7723908071:AAHQCl0hTTG4nnDkzRWhYFUKcseJBk7gx9E",
+            'token'               => "",
             'certificate_path'    => env('TELEGRAM_CERTIFICATE_PATH', 'YOUR-CERTIFICATE-PATH'),
             'webhook_url'         => env('TELEGRAM_WEBHOOK_2_URL', 'YOUR-BOT-WEBHOOK-URL'),
         ],
