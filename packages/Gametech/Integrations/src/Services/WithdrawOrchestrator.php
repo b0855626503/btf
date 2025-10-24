@@ -9,8 +9,6 @@ use Gametech\Integrations\Contracts\ApproveContext;
 use Gametech\Integrations\ProviderManager;
 use Gametech\Integrations\Support\ConfigStore;
 use Gametech\Member\Models\MemberWebProxy;
-use Gametech\Payment\Models\BankPayment;
-use Gametech\Payment\Repositories\BankPaymentRepository;
 use Gametech\Payment\Repositories\WithdrawRepository; // หากคุณใช้สัญญา เปลี่ยนเป็น Contracts\WithdrawRepository
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -111,112 +109,6 @@ class WithdrawOrchestrator
             if ($currentStep === 'approve' && empty($state['created'])) {
                 throw new \RuntimeException('ผิดลำดับขั้นตอน: ยังไม่ได้สร้างรายการ');
             }
-        }
-    }
-
-    /**
-     * สร้างคำขอถอน (step: create/request)
-     * $payload: ['user_name','amount','bankm','date_bank','time_bank', ...]
-     * $meta   : ['webcode'=>int, ...]
-     */
-    public function request(array $payload, array $meta = [], $actor = null): array
-    {
-        $policy = $this->policy();
-        $this->acl->must($actor, $policy['permissions']['create']);
-
-        try {
-            // 1) หา member จาก user_name
-            $member = MemberWebProxy::where('user', $payload['user_name'] ?? '')->with('me')->first();
-            if (!$member) {
-                return ['success' => false, 'message' => 'ไม่พบสมาชิกตาม User ID ที่ระบุ'];
-            }
-
-            // 2) ตรวจจำนวนเงิน
-            $amount = (float)($payload['amount'] ?? 0);
-            if ($amount < 1) {
-                return ['success' => false, 'message' => 'จำนวนเงินไม่ถูกต้อง'];
-            }
-
-            // 3) สร้าง payload สำหรับ repository
-            $now  = Carbon::now();
-            $date = $payload['date_bank'] ?? $now->format('Y-m-d');
-            $time = $payload['time_bank'] ?? $now->format('H:i');
-
-            $data = [
-                'member_code'  => $member->me->code ?? $member->code ?? null,
-                'member_user'  => $payload['user_name'],
-                'amount'       => $amount,
-                'bankm'        => $payload['bankm'] ?? null,
-                'date_bank'    => $date,
-                'time_bank'    => $time,
-                'date_record'  => trim("$date $time"),
-                'webcode'      => $meta['webcode'] ?? ($member->me->webcode ?? null),
-                'status'       => 'created', // แนะนำให้ใช้สถานะนี้เพื่อช่วย assertFlowStep
-                'remark_admin' => $payload['remark_admin'] ?? '',
-                'channel'      => $payload['channel'] ?? 'MANUAL',
-            ];
-
-            // 4) บันทึก
-            // TODO: map to your repository methods
-            $withdraw = $this->repository->create($data);
-
-            return [
-                'success' => true,
-                'message' => 'สร้างคำขอถอนสำเร็จ',
-                'ref'     => $withdraw->code ?? $withdraw->id ?? null,
-                'data'    => $withdraw,
-            ];
-        } catch (Throwable $e) {
-            Log::error('Withdraw request failed', [
-                'payload' => $payload,
-                'meta'    => $meta,
-                'error'   => $e->getMessage(),
-            ]);
-
-            return ['success' => false, 'message' => 'สร้างคำขอถอนไม่สำเร็จ: ' . $e->getMessage()];
-        }
-    }
-
-    /**
-     * ตรวจรายการ/ตัดเครดิตออกจากค่าย (step: check)
-     * $payload: ช่องให้แนบหลักฐาน/หมายเหตุที่จำเป็น ฯลฯ
-     */
-    public function check($withdraw, array $payload = [], array $meta = [], $actor = null): array
-    {
-        $policy = $this->policy();
-        $this->acl->must($actor, $policy['permissions']['check']);
-
-        try {
-            $state = [
-                'created' => !empty($withdraw->status) && in_array($withdraw->status, ['created', 'checked', 'approved'], true),
-                'checked' => !empty($withdraw->status) && in_array($withdraw->status, ['checked', 'approved'], true),
-            ];
-            $this->assertFlowStep('check', $state, $policy);
-
-            // ตัดเครดิตออกจากค่ายเกม/ระบบ wallet ตาม provider ที่ผูก
-            // หมายเหตุ: รายละเอียดจริงขึ้นกับ ProviderManager ในระบบคุณ
-            // ตัวอย่างโครง (ให้คง log ไว้)
-            Log::info('Withdraw check begin', ['ref' => $withdraw->code ?? $withdraw->id]);
-
-            // TODO: map to your repository methods
-            $updated = $this->repository->markChecked($withdraw, [
-                'status'       => 'checked',
-                'remark_admin' => $payload['remark_admin'] ?? $withdraw->remark_admin ?? '',
-            ]);
-
-            return [
-                'success' => true,
-                'message' => 'ตรวจรายการถอนสำเร็จ',
-                'ref'     => $withdraw->code ?? $withdraw->id ?? null,
-                'data'    => $updated ?? $withdraw,
-            ];
-        } catch (Throwable $e) {
-            Log::error('Withdraw check failed', [
-                'ref'   => $withdraw->code ?? $withdraw->id ?? null,
-                'error' => $e->getMessage(),
-            ]);
-
-            return ['success' => false, 'message' => 'ตรวจรายการถอนไม่สำเร็จ: ' . $e->getMessage()];
         }
     }
 
