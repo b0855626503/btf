@@ -1,8 +1,8 @@
-<b-modal ref="addedit" id="addedit" centered size="md" title="{{ $menu->currentName }}" :no-stacking="true"
+<b-modal ref="approve" id="approve" centered size="md" title="ทำรายการอนุมัติการโอนเงิน" :no-stacking="true"
          :no-close-on-backdrop="true"
          :hide-footer="true" :lazy="true">
     <b-container class="bv-example-row">
-        <b-form @submit.prevent.once="addEditSubmitNew" v-if="show" id="frmaddedit" ref="frmaddedit">
+        <b-form @submit.prevent="approveSubmit" v-if="show">
             <b-form-row>
                 <div class="info-box">
                     <span class="info-box-icon"><b-img :src="formaddedit.member_bank_pic"></b-img></span>
@@ -27,9 +27,6 @@
                         <td>จำนวนเงิน :</td>
                         <td align="right" v-text="formaddedit.amount"></td>
                     </tr>
-                    <tr v-if="formaddedit.member_qr_pic">
-                        <td colspan="2" align="center"><b-img :src="formaddedit.member_qr_pic" class="img-fluid" style="max-width: 200px; display: block; margin: 0 auto;"></b-img></td>
-                    </tr>
                     </tbody>
                 </table>
             </b-form-row>
@@ -39,219 +36,69 @@
                 <b-col cols="12">
 
                     <b-form-group
-                        id="input-group-account_code"
-                        label="บัญชีที่ใช้ดำเนินการ:"
-                        label-for="account_code"
-                        description="">
+                            id="input-group-account_code"
+                            label="บัญชีที่ใช้ดำเนินการ:"
+                            label-for="account_code"
+                            description="">
 
                         <b-form-select
-                            id="account_code"
-                            name="account_code"
-                            v-model="formaddedit.account_code"
-                            :options="option.account_code"
-                            size="sm"
-                            required
+                                id="account_code"
+                                name="account_code"
+                                v-model="formaddedit.account_code"
+                                :options="option.account_code"
+                                size="sm"
+                                required
                         ></b-form-select>
 
                     </b-form-group>
 
                     <b-form-group
-                        id="input-group-1"
-                        label="ค่าธรรมเนียม:"
-                        label-for="fee"
-                        description="">
-                        <b-form-input
-                            id="fee"
-                            v-model="formaddedit.fee"
-                            type="number"
-                            size="sm"
-                            placeholder=""
-                            autocomplete="off"
-                        ></b-form-input>
-                    </b-form-group>
-                </b-col>
-                <b-col cols="12">
-
-                    <b-form-group
-                        id="input-group-2"
-                        label="วันที่โอน:"
-                        label-for="date_bank"
-                        description="">
-                        <b-form-datepicker
-                            id="date_bank"
-                            v-model="formaddedit.date_bank"
-                            size="sm"
-                            placeholder=""
-                            autocomplete="off"
-                            locale="en-US"
-                            @context="onContext"
-                        ></b-form-datepicker>
-                    </b-form-group>
-                </b-col>
-
-            </b-form-row>
-
-            <b-form-row>
-                <b-col cols="12">
-                    <b-form-group
-                        id="input-group-3"
-                        label="เวลาที่โอน:"
-                        label-for="time_bank"
-                        description="">
-                        <b-form-timepicker
-                            id="time_bank"
-                            v-model="formaddedit.time_bank"
-                            type="text"
-                            size="sm"
-                            placeholder=""
-                            autocomplete="off"
-                            :hour12="false"
-                        ></b-form-timepicker>
-                    </b-form-group>
-                </b-col>
-                <b-col cols="12">
-                    <b-form-group
-                        id="input-group-3"
-                        label="หมายเหตุ:"
-                        label-for="remark_admin"
-                        description="">
-                        <b-form-input
-                            id="remark_admin"
-                            v-model="formaddedit.remark_admin"
-                            type="text"
-                            size="sm"
-                            placeholder=""
-                            autocomplete="off"
-
-                        ></b-form-input>
-                    </b-form-group>
-                </b-col>
-            </b-form-row>
-
-
-            <b-button type="submit" variant="primary">บันทึก</b-button>
-
-        </b-form>
-    </b-container>
-</b-modal>
-
-<b-modal ref="addeditnew" id="addeditnew" centered size="md" title="{{ $menu->currentName }}" :no-stacking="true"
-         :no-close-on-backdrop="true"
-         :hide-footer="true" :lazy="true">
-    <b-container class="bv-example-row">
-        <b-form @submit.prevent.once="addEditSubmit" v-if="show" id="frmaddeditnew" ref="frmaddeditnew">
-
-            <b-form-row>
-                <b-col>
-                    <b-form-group
-                            id="input-group-user_name"
-                            label="User ID:"
-                            label-for="user_name"
-                            description="ระบุ User ID ที่ต้องการ แจ้งถอน">
-                        <b-input-group>
-                            <b-form-input
-                                    id="user_name"
-                                    v-model="formaddeditnew.user_name"
-                                    type="text"
-                                    size="md"
-                                    placeholder="User"
-                                    autocomplete="off"
-
-                            ></b-form-input>
-                            <b-input-group-append>
-                                <b-button variant="success" @click="loadUser">ค้นหา</b-button>
-                            </b-input-group-append>
-                        </b-input-group>
-                    </b-form-group>
-                </b-col>
-
-
-            </b-form-row>
-
-            <b-form-row>
-                <b-col cols="4">
-                    <div class="info-box">
-                        <span class="info-box-icon"><b-img :src="formaddeditnew.member_bank_pic"
-                                                           width="50px"></b-img></span>
-
-                        <div class="info-box-content">
-                            <span class="info-box-text" v-text="formaddeditnew.member_bank"></span>
-                            <span class="info-box-number" v-text="formaddeditnew.member_account"></span>
-                        </div>
-                        <!-- /.info-box-content -->
-                    </div>
-                </b-col>
-                <b-col cols="8">
-                    <table class="table">
-                        <tbody>
-                        <tr>
-                            <td width="50%">User ID :</td>
-                            <td width="50%" align="right" v-text="formaddeditnew.member_username"></td>
-                        </tr>
-                        <tr>
-                            <td width="50%">Game ID :</td>
-                            <td width="50%" align="right" v-text="formaddeditnew.member_gameuser"></td>
-                        </tr>
-                        <tr>
-                            <td>ชื่อลูกค้า :</td>
-                            <td align="right" v-text="formaddeditnew.member_name"></td>
-                        </tr>
-                        <tr>
-                            <td>ยอดที่มีอยู่ :</td>
-                            <td align="right" v-text="formaddeditnew.balance"></td>
-                        </tr>
-                        </tbody>
-                    </table>
-                </b-col>
-            </b-form-row>
-
-            <b-form-row>
-                <b-col>
-                    <b-form-group
                             id="input-group-1"
-                            label="ยอดที่จะถอน:"
-                            label-for="amount"
+                            label="ค่าธรรมเนียม:"
+                            label-for="fee"
                             description="">
                         <b-form-input
-                                id="amount"
-                                v-model="formaddeditnew.amount"
+                                id="fee"
+                                v-model="formaddedit.fee"
                                 type="number"
-                                size="sm"
-                                placeholder="จำนวนเงิน"
-                                autocomplete="off"
-                                required
-                        ></b-form-input>
-                    </b-form-group>
-                </b-col>
-            </b-form-row>
-
-            <b-form-row>
-                <b-col>
-                    <b-form-group
-                            id="input-group-1"
-                            label="วันที่:"
-                            label-for="date_record"
-                            description="">
-                        <b-form-datepicker
-                                id="date_record"
-                                v-model="formaddeditnew.date_record"
                                 size="sm"
                                 placeholder=""
                                 autocomplete="off"
-                                locale="en-US"
+                        ></b-form-input>
+                    </b-form-group>
+                </b-col>
+                <b-col cols="12">
+
+                    <b-form-group
+                            id="input-group-2"
+                            label="วันที่โอน:"
+                            label-for="date_bank"
+                            description="">
+                        <b-form-datepicker
+                                id="date_bank"
+                                v-model="formaddedit.date_bank"
+                                size="sm"
+                                placeholder=""
+                                autocomplete="off"
+                                locale="th-TH"
+                                :date-format-options="{ year: 'numeric', month: '2-digit', day: '2-digit' }"
                                 @context="onContext"
                         ></b-form-datepicker>
                     </b-form-group>
                 </b-col>
-                <b-col>
+
+            </b-form-row>
+
+            <b-form-row>
+                <b-col cols="12">
                     <b-form-group
-                            id="input-group-1"
-                            label="เวลา:"
-                            label-for="timedept"
+                            id="input-group-3"
+                            label="เวลาที่โอน:"
+                            label-for="time_bank"
                             description="">
                         <b-form-timepicker
-                                id="timedept"
-                                v-model="formaddeditnew.timedept"
+                                id="time_bank"
+                                v-model="formaddedit.time_bank"
                                 type="text"
                                 size="sm"
                                 placeholder=""
@@ -260,10 +107,13 @@
                         ></b-form-timepicker>
                     </b-form-group>
                 </b-col>
+
             </b-form-row>
 
-
-            <b-button type="submit" variant="primary">บันทึก</b-button>
+            <b-button type="submit" variant="primary" :disabled="!userFound.withdraw || submittingApprove">
+                <span v-if="submittingApprove"><b-spinner small class="mr-1"></b-spinner>กำลังบันทึก...</span>
+                <span v-else>บันทึก</span>
+            </b-button>
 
         </b-form>
     </b-container>
@@ -345,7 +195,8 @@
 
                     <b-form-row>
                         <b-col>
-                            <b-form-group id="input-group-1" label="จำนวนเงินถอน:" label-for="amount" description="ระบุจำนวนเงิน ที่ต้องการเติม">
+                            <b-form-group id="input-group-1" label="จำนวนเงินถอน:" label-for="amount"
+                                          description="ระบุจำนวนเงิน ที่ต้องการเติม">
                                 <b-form-input
                                         id="amount"
                                         v-model.number="formwithdraw.amount"
@@ -375,38 +226,6 @@
                         </b-col>
                     </b-form-row>
 
-                    <b-form-row>
-                        <b-col>
-                            <b-form-group id="input-group-date" label="วันที่โอน:" label-for="date_bank" description="">
-                                <b-form-datepicker
-                                        id="date_bank"
-                                        v-model="formwithdraw.date_bank"
-                                        size="sm"
-                                        placeholder=""
-                                        autocomplete="off"
-                                        locale="th-TH"
-                                        :date-format-options="{ year: 'numeric', month: '2-digit', day: '2-digit' }"
-                                        @context="onContext"
-                                ></b-form-datepicker>
-                            </b-form-group>
-                        </b-col>
-                    </b-form-row>
-
-                    <b-form-row>
-                        <b-col>
-                            <b-form-group id="input-group-timebank" label="เวลาที่โอน:" label-for="time_bank" description="">
-                                <b-form-timepicker
-                                        id="time_bank"
-                                        v-model="formwithdraw.time_bank"
-                                        type="text"
-                                        size="sm"
-                                        placeholder=""
-                                        autocomplete="off"
-                                        :hour12="false"
-                                ></b-form-timepicker>
-                            </b-form-group>
-                        </b-col>
-                    </b-form-row>
                 </b-col>
 
                 <b-col>
@@ -457,24 +276,23 @@
 </b-modal>
 
 
-
 <b-modal ref="clear" id="clear" centered size="md" title="โปรดระบุหมายเหตุ ในการทำรายการ" :no-stacking="true"
          :no-close-on-backdrop="true"
          :hide-footer="true" :lazy="true">
     <b-form @submit.prevent.once="clearSubmit" v-if="show" id="frmclear" ref="frmclear">
         <b-form-group
-            id="input-group-remark"
-            label="หมายเหตุ:"
-            label-for="remark"
-            description="">
+                id="input-group-remark"
+                label="หมายเหตุ:"
+                label-for="remark"
+                description="">
             <b-form-input
-                id="remark"
-                v-model="formclear.remark"
-                type="text"
-                size="sm"
-                placeholder=""
-                autocomplete="off"
-                required
+                    id="remark"
+                    v-model="formclear.remark"
+                    type="text"
+                    size="sm"
+                    placeholder=""
+                    autocomplete="off"
+                    required
             ></b-form-input>
         </b-form-group>
 
@@ -522,17 +340,16 @@
                     trigger: 0,
                     method: 'withdraw',
                     formmethod: 'edit',
-                    userFound: { addedit: false, withdraw: false },
+                    userFound: {addedit: false, withdraw: false},
                     userTimer: null,
 
-                    submittingAddEdit: false,
+                    submittingApprove: false,
                     submittingWithdraw: false,
                     submittingClear: false,
                     formaddedit: {
                         fee: 0,
                         date_bank: '',
                         time_bank: '',
-                        remark_admin: '',
                         member_username: '',
                         member_code: '',
                         member_name: '',
@@ -541,7 +358,6 @@
                         member_bank_pic: '',
                         amount: 0,
                         account_code: 0,
-                        member_qr_pic: '',
                     },
                     formaddeditnew: {
                         member_code: '',
@@ -572,11 +388,11 @@
                         balance: 0,
                     },
                     fields: [
-                        { key: 'time', label: 'วันที่แจ้งถอน' },
-                        { key: 'time_topup', label: 'วันที่โอน' },
-                        { key: 'bank', label: 'ช่องทางที่โอน', class: 'text-center' },
-                        { key: 'amount', label: 'จำนวนเงิน', class: 'text-right' },
-                        { key: 'user_id', label: 'ผู้ทำรายการ', class: 'text-center' },
+                        {key: 'time', label: 'วันที่แจ้งถอน'},
+                        {key: 'time_topup', label: 'วันที่โอน'},
+                        {key: 'bank', label: 'ช่องทางที่โอน', class: 'text-center'},
+                        {key: 'amount', label: 'จำนวนเงิน', class: 'text-right'},
+                        {key: 'user_id', label: 'ผู้ทำรายการ', class: 'text-center'},
                     ],
                     items: [],
                     caption: null,
@@ -587,7 +403,7 @@
                         bankm: [],
                         account_code: []
                     },
-                    bankm: [{ value: '', text: '== ธนาคาร ==' }],
+                    bankm: [{value: '', text: '== ธนาคาร =='}],
                 };
             },
             created() {
@@ -598,10 +414,16 @@
                 this.loadBank();
             },
             beforeDestroy() {
-                if (this.userTimer) { clearTimeout(this.userTimer); this.userTimer = null; }
+                if (this.userTimer) {
+                    clearTimeout(this.userTimer);
+                    this.userTimer = null;
+                }
             },
             destroyed() {
-                if (this.userTimer) { clearTimeout(this.userTimer); this.userTimer = null; }
+                if (this.userTimer) {
+                    clearTimeout(this.userTimer);
+                    this.userTimer = null;
+                }
             },
             methods: {
                 onContext(ctx) {
@@ -694,8 +516,6 @@
                         amount: 0,
                         balance: 0,
                         bankm: '',
-                        date_bank: `${yyyy}-${mm}-${dd}`,
-                        time_bank: `${HH}:${II}`,
                     };
                     this.userFound.withdraw = false;
                     this.method = 'withdraw';
@@ -704,6 +524,41 @@
                     this.$nextTick(() => {
                         this.show = true;
                         this.$refs.withdraw.show();
+                    });
+                },
+                ApproveModal(code) {
+                    this.code = null;
+                    const now = new Date();
+                    const yyyy = now.getFullYear();
+                    const mm = String(now.getMonth() + 1).padStart(2, '0');
+                    const dd = String(now.getDate()).padStart(2, '0');
+                    const HH = String(now.getHours()).padStart(2, '0');
+                    const II = String(now.getMinutes()).padStart(2, '0');
+
+                    this.formaddedit = {
+                        fee: 0,
+                        date_bank: `${yyyy}-${mm}-${dd}`,
+                        time_bank: `${HH}:${II}`,
+                        member_username: '',
+                        member_code: '',
+                        member_name: '',
+                        member_account: '',
+                        member_bank: '',
+                        member_bank_pic: '',
+                        amount: 0,
+                        account_code: 0,
+                    },
+
+
+                    this.userFound.withdraw = false;
+                    this.method = 'withdraw';
+
+                    this.show = false;
+                    this.$nextTick(() => {
+                        this.code = code;
+                        this.loadData();
+                        this.show = true;
+                        this.$refs.approve.show();
                     });
                 },
                 async loadUser_() {
@@ -722,23 +577,23 @@
                     }
                 },
                 async loadData() {
-                    const response = await axios.post("{{ url($menu->currentRoute.'/loaddata') }}", {id: this.code});
+                    const resp = await axios.post("{{ url($menu->currentRoute.'/loaddata') }}", {id: this.code});
+                    const ok = resp?.data?.success === true;
+                    this.userFound['withdraw'] = ok;
                     this.formaddedit = {
-                        member_username: response.data.data.member.user_name,
-                        member_code: response.data.data.member.code,
-                        member_name: response.data.data.member.name,
-                        member_account: response.data.data.member.acc_no,
+                        member_username: resp.data.data.member.user_name,
+                        member_code: resp.data.data.member.code,
+                        member_name: resp.data.data.member.name,
+                        member_account: resp.data.data.member.acc_no,
                         member_bank: response.data.data.bank.name_th,
-                        tel: response.data.data.member.tel,
+
                         member_bank_pic: '/storage/bank_img/' + response.data.data.bank.filepic,
-                        member_qr_pic: (response.data.data.member.pic_id ? '/storage/' + response.data.data.member.pic_id+'?v={{ time() }}' : ''),
+                        member_qr_pic: (response.data.data.member.pic_id ? '/storage/' + response.data.data.member.pic_id + '?v={{ time() }}' : ''),
                         amount: response.data.data.amount,
-                        account_code: (response.data.data.account_code == 0 ? 9 : response.data.data.account_code) ,
+                        account_code: (response.data.data.account_code == 0 ? 9 : response.data.data.account_code),
                         fee: 0,
                         date_bank: moment().format('YYYY-MM-DD'),
                         time_bank: moment().format('HH:mm'),
-
-
                     };
 
                 },
@@ -764,21 +619,20 @@
                     try {
                         const resp = await axios.post(
                             "{{ route('admin.'.$menu->currentRoute.'.loaduser') }}",
-                            { id }
+                            {id}
                         );
                         const ok = resp?.data?.success === true;
                         this.userFound[context] = ok;
 
                         if (context === 'withdraw' && ok) {
                             this.formwithdraw.name = resp?.data?.data?.member?.me?.name ?? '';
-                            this.formwithdraw.id   = resp?.data?.data?.member?.user ?? '';
-                            this.formwithdraw.balance   = resp?.data?.data?.balance?.credit ?? 0;
+                            this.formwithdraw.id = resp?.data?.data?.member?.user ?? '';
+                            this.formwithdraw.balance = resp?.data?.data?.balance?.credit ?? 0;
 
 
                             await this.myLog();
                             await this.loadBankAccountUser();
                         }
-
 
 
                     } catch (err) {
@@ -801,13 +655,15 @@
                     this.isBusy = true;
                     try {
                         const response = await axios.get("{{ route('admin.member.gamelog') }}", {
-                            params: { id: this.formwithdraw.id, method: this.method }
+                            params: {id: this.formwithdraw.id, method: this.method}
                         });
                         this.caption = response?.data?.name || '';
                         this.items = response?.data?.list || [];
                     } finally {
                         // กันแฟลช: ดีเลย์ 150–250ms
-                        setTimeout(() => { this.isBusy = false; }, 200);
+                        setTimeout(() => {
+                            this.isBusy = false;
+                        }, 200);
                     }
                 },
 
@@ -825,7 +681,7 @@
 
                     try {
 
-                        const response = await axios.post("{{ route('admin.member.loadbankaccountuser') }}",{ id : this.formwithdraw.id});
+                        const response = await axios.post("{{ route('admin.member.loadbankaccountuser') }}", {id: this.formwithdraw.id});
                         this.bankm = response?.data?.banks || this.banks;
                     } catch (e) {
                         // คงค่า default ต่อไป
@@ -1030,7 +886,8 @@
                     try {
                         const btn = document.getElementById('btnchecking');
                         if (btn) btn.disabled = !!disabled;
-                    } catch(_) {}
+                    } catch (_) {
+                    }
                 },
 
                 showAlert(data) {
@@ -1046,20 +903,25 @@
 
                 async DeductModal(code) {
                     try {
-                        const response = await axios.post("{{ route('admin.'.$menu->currentRoute.'.loaddata') }}", { id: code });
+                        const response = await axios.post("{{ route('admin.'.$menu->currentRoute.'.loaddata') }}", {id: code});
                         const data = response?.data?.data || {};
-                        const user = data?.member_user ? `ไอดีที่จะตัดเครดิตออก : ${data.member_user}` : 'ไม่พบข้อมูล';
+                        const user = data?.member_user ? `แจ้งถอน ให้กับ ไอดี : ${data.member_user}` : 'ไม่พบข้อมูล';
                         const info = data?.amount ? `จำนวนเงิน : ${data.amount}` : 'ไม่พบข้อมูล';
 
                         const h = this.$createElement;
                         const messageVNode = h('div', [
-                            h('p', { class: 'text-left' }, [
+                            h('p', {class: 'text-left'}, [
                                 'ถ้าข้อมูลไอดีถูกต้องแล้ว ให้กด ',
                                 h('strong', 'ตัดเครดิต'),
                                 ' เพื่อทำการหักยอดเงิน ของลูกค้าในเกม.',
                             ]),
-                            h('p', { class: 'text-info mt-2' }, user),
-                            h('p', { class: 'text-info mt-2' }, info)
+                            h('p', {class: 'text-left'}, [
+                                'ถ้าข้อมูลรายการไม่ถูก หรือ มีแจ้งซ้ำ ให้กด ',
+                                h('strong', 'ยกเลิกรายการ'),
+                                ' เพื่อลบรายการ แจ้งถอนนนี้.',
+                            ]),
+                            h('p', {class: 'text-info mt-2'}, user),
+                            h('p', {class: 'text-info mt-2'}, info)
                         ]);
 
                         const confirmed = await this.$bvModal.msgBoxConfirm([messageVNode], {
@@ -1067,6 +929,7 @@
                             size: 'sm',
                             buttonSize: 'sm',
                             okTitle: '✅ ตัดเครดิต',
+                            cancelTitle: '❌ ยกเลิกรายการ',
                             okVariant: 'success',
                             cancelVariant: 'danger',
                             centered: true,
@@ -1129,9 +992,10 @@
                     }
 
                     try {
-                        this.approving = true; this._approving = true;
+                        this.approving = true;
+                        this._approving = true;
 
-                        const resp = await this.$http.post("{{ route('admin.'.$menu->currentRoute.'.update') }}", { id: code });
+                        const resp = await this.$http.post("{{ route('admin.'.$menu->currentRoute.'.update') }}", {id: code});
                         const data = resp?.data || {};
                         this.showAlert(data);
                     } catch (err) {
@@ -1147,10 +1011,119 @@
                             hideHeaderClose: false,
                         });
                     } finally {
-                        this.approving = false; this._approving = false;
-                        if (window.LaravelDataTables?.["deposittable"]) {
-                            window.LaravelDataTables["deposittable"].draw(false);
+                        this.approving = false;
+                        this._approving = false;
+                        if (window.LaravelDataTables?.["withdrawtable"]) {
+                            window.LaravelDataTables["withdrawtable"].draw(false);
                         }
+                    }
+                },
+
+                async approveSubmit(event) {
+                    event.preventDefault();
+                    this.submittingWithdraw = true;
+                    this.toggleButtonDisable(true);
+
+                    const h = this.$createElement;
+                    const messageVNode = h('div', [
+                        h('p', {class: 'text-left'}, [
+                            'ถ้าผู้ทำรายการ เลือกธนาคารที่ใช้ดำเนินการ เป็นประเภท ',
+                            h('strong', 'Payment GateWay'),
+                            ' ระบบจะส่งยอดถอนไปยัง ช่องทางที่เลือก.',
+                        ]),
+                    ]);
+
+                    const confirmed = await this.$bvModal.msgBoxConfirm([messageVNode], {
+                        title: 'ยืนยันการโอนเงิน',
+                        size: 'sm',
+                        buttonSize: 'sm',
+                        okTitle: '✅ ยืนยันรายการ',
+                        okVariant: 'success',
+                        cancelVariant: 'danger',
+                        centered: true,
+
+                        // สำคัญ: กันกดด้านนอก/กด ESC แล้วไปต่อโดยไม่ได้ตั้งใจ
+                        noCloseOnBackdrop: true,
+                        noCloseOnEsc: true,
+
+                        // ให้มีปุ่ม X ที่หัว modal
+                        hideHeaderClose: false,
+                        // ปิดแล้วให้คืนโฟกัสปุ่มเดิม (กัน Enter เคลื่อน focus เพี้ยน)
+                        returnFocus: true,
+                    });
+
+                    if (confirmed === true) {
+                        // ไปคอนเฟิร์มรอบสุดท้าย
+                        await this.DeductWithdraw(code);
+                    } else if (confirmed === false) {
+                        // ผู้ใช้กด "User ไม่ถูกต้อง" → ย้อนขั้นตอน
+                        // this.cancelDeposit(code);
+                    }
+                },
+
+                async withdrawApprove(code) {
+                    try {
+                        const response = await axios.post("{{ route('admin.'.$menu->currentRoute.'.loaddata') }}", {id: code});
+                        const data = response?.data?.data || {};
+                        const user = data?.member_user ? `โอนเงินให้กับ ไอดี : ${data.member_user}` : 'ไม่พบข้อมูล';
+                        const info = data?.amount ? `จำนวนเงิน : ${data.amount}` : 'ไม่พบข้อมูล';
+
+                        const h = this.$createElement;
+                        const messageVNode = h('div', [
+                            h('p', {class: 'text-left'}, [
+                                'ถ้าข้อมูลไอดีถูกต้องแล้ว ให้กด ',
+                                h('strong', 'ตัดเครดิต'),
+                                ' เพื่อทำการหักยอดเงิน ของลูกค้าในเกม.',
+                            ]),
+                            h('p', {class: 'text-left'}, [
+                                'ถ้าข้อมูลรายการไม่ถูก หรือ มีแจ้งซ้ำ ให้กด ',
+                                h('strong', 'ยกเลิกรายการ'),
+                                ' เพื่อลบรายการ แจ้งถอนนนี้.',
+                            ]),
+                            h('p', {class: 'text-info mt-2'}, user),
+                            h('p', {class: 'text-info mt-2'}, info)
+                        ]);
+
+                        const confirmed = await this.$bvModal.msgBoxConfirm([messageVNode], {
+                            title: 'จัดการรายการถอน',
+                            size: 'sm',
+                            buttonSize: 'sm',
+                            okTitle: '✅ ตัดเครดิต',
+                            cancelTitle: '❌ ยกเลิกรายการ',
+                            okVariant: 'success',
+                            cancelVariant: 'danger',
+                            centered: true,
+
+                            // สำคัญ: กันกดด้านนอก/กด ESC แล้วไปต่อโดยไม่ได้ตั้งใจ
+                            noCloseOnBackdrop: true,
+                            noCloseOnEsc: true,
+
+                            // ให้มีปุ่ม X ที่หัว modal
+                            hideHeaderClose: false,
+                            // ปิดแล้วให้คืนโฟกัสปุ่มเดิม (กัน Enter เคลื่อน focus เพี้ยน)
+                            returnFocus: true,
+                        });
+
+                        if (confirmed === true) {
+                            // ไปคอนเฟิร์มรอบสุดท้าย
+                            await this.DeductWithdraw(code);
+                        } else if (confirmed === false) {
+                            // ผู้ใช้กด "User ไม่ถูกต้อง" → ย้อนขั้นตอน
+                            // this.cancelDeposit(code);
+                        }
+                        // กรณีอื่น (เช่น programmatic close) → ไม่ทำอะไร
+                    } catch (err) {
+                        console.error('load data error:', err);
+                        this.$bvModal.msgBoxOk('ไม่สามารถโหลดข้อมูลได้', {
+                            title: 'ข้อผิดพลาด',
+                            size: 'sm',
+                            buttonSize: 'sm',
+                            okVariant: 'danger',
+                            centered: true,
+                            noCloseOnBackdrop: true,
+                            noCloseOnEsc: true,
+                            hideHeaderClose: false,
+                        });
                     }
                 },
             }

@@ -33,21 +33,35 @@ class DepositOrchestrator
     private function policy(): array
     {
         $defaults = [
-            'flow' => 'three_step', // 'two_step'|'three_step'
-            'auto_post' => false,        // ปลอดภัยไว้ก่อน
-            'permissions' => [
-                'create' => 'deposit.create',
-                'check' => 'deposit.check',
+            'flow'       => 'three_step', // 'two_step'|'three_step'
+            'auto_post'  => false,
+            'permissions'=> [
+                'create'  => 'deposit.create',
+                'check'   => 'deposit.check',
                 'approve' => 'deposit.approve',
-                'post' => 'deposit.post.head', // ตำแหน่งหัวหน้า/ผู้อนุมัติสุดท้าย
+                'post'    => 'deposit.post.head', // ผู้อนุมัติขั้นสุดท้าย (หัวหน้า)
             ],
         ];
 
+        // 1) ดึงค่า dynamic (DB)
         $cfg = $this->configStore->getJson('ops.deposit', 'content');
         if (!is_array($cfg)) {
-            return $defaults;
+            $cfg = [];
         }
 
+        // 2) ดึงค่า fallback จากไฟล์ config
+        $fileAccess = config('integrations.access.deposit', []);
+        $fileFlow   = config('integrations.flows.deposit', null);
+
+        // รวมไฟล์ → แล้วให้ DB ทับไฟล์ (DB = แหล่งความจริงล่าสุด)
+        if (is_array($fileAccess)) {
+            $cfg = array_replace_recursive($fileAccess, $cfg);
+        }
+        if (is_string($fileFlow) && !isset($cfg['flow'])) {
+            $cfg['flow'] = $fileFlow;
+        }
+
+        // 3) รวมกับ defaults และอุดคีย์ที่หาย
         $out = array_replace_recursive($defaults, $cfg);
 
         if (!isset($out['permissions']) || !is_array($out['permissions'])) {
@@ -59,11 +73,12 @@ class DepositOrchestrator
             }
         }
 
+        // 4) บังคับกติกา flow ให้ถูกต้อง
         if (!in_array($out['flow'], ['two_step', 'three_step'], true)) {
             $out['flow'] = 'three_step';
         }
         if ($out['flow'] === 'three_step') {
-            $out['auto_post'] = false; // three_step ต้องกดตามขั้นตอน
+            $out['auto_post'] = false; // ต้องกดตามขั้นตอนเสมอ
         }
 
         return $out;

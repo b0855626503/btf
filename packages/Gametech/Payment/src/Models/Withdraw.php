@@ -44,6 +44,7 @@ class Withdraw extends Model implements WithdrawContract
         'transection_type',
         'member_user',
         'bankm',
+        'bankout',
         'amount',
         'date_record',
         'timedept',
@@ -58,10 +59,17 @@ class Withdraw extends Model implements WithdrawContract
         'credit_1',
         'status_withdraw',
         'ck_withdraw',
+        'ck_balance',
         'ck_user',
+        'ckb_user',
+        'ck_step1',
+        'ck_step2',
+        'date_bank',
+        'time_bank',
         'oldcredit',
         'aftercredit',
         'ck_date',
+        'ckb_date',
     ];
 
 

@@ -2,6 +2,7 @@
 
 namespace Gametech\Integrations\Providers;
 
+use Gametech\Integrations\Services\WithdrawOrchestrator;
 use Gametech\Integrations\Support\ConfigStore;
 use Illuminate\Support\ServiceProvider;
 use Gametech\Integrations\ProviderManager;
@@ -39,6 +40,16 @@ class IntegrationsServiceProvider extends ServiceProvider
                 $app->make(ProviderManager::class),
                 $app->make(AclAuthorizer::class),
                 $app->make(\Gametech\Payment\Repositories\BankPaymentRepository::class),
+                $app->make(ConfigStore::class),
+            );
+        });
+
+        // WithdrawOrchestrator
+        $this->app->singleton(WithdrawOrchestrator::class, function ($app) {
+            return new WithdrawOrchestrator(
+                $app->make(ProviderManager::class),
+                $app->make(AclAuthorizer::class),
+                $app->make(\Gametech\Payment\Repositories\WithdrawRepository::class),
                 $app->make(ConfigStore::class),
             );
         });
