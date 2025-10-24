@@ -39,7 +39,12 @@ return [
             'check'   => 'bank_in.update',
             'approve' => 'bank_in.approve',
             'post'    => 'bank_in.approve',
-        ],
+        ],'withdraw' => [
+            'create'  => 'withdraw.create',   // ทีมงานสร้างคำขอ + ส่งเข้าตัด
+            'check'   => 'withdraw.update',   // ทีมงานยืนยันรายการและ "ตัดเครดิตออกจากค่าย"
+            'approve' => 'withdraw.approve',  // หัวหน้ากดยืนยันว่า "โอนให้ลูกค้าแล้ว"
+            'post'    => 'withdraw.approve',  // ใช้ key เดียวกับ approve (ตามดีไซน์ฝั่งฝาก)
+        ]
     ],
     'integrations_config' => [
         'table' => 'configs',  // ชื่อตารางจริง

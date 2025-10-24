@@ -709,7 +709,7 @@ Route::domain(config('app.admin_url') . '.' . (is_null(config('app.admin_domain_
 
                 Route::post('clear', $route['controller'] . '@clear')->name('admin.' . $route['name'] . '.clear');
 
-                Route::post('update/{id?}', $route['controller'] . '@update')->name('admin.' . $route['name'] . '.update');
+                Route::post('update', $route['controller'] . '@update')->name('admin.' . $route['name'] . '.update');
 
                 Route::post('delete', $route['controller'] . '@destroy')->name('admin.' . $route['name'] . '.delete');
 

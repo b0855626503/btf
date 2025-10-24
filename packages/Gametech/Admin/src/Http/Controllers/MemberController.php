@@ -707,7 +707,7 @@ class MemberController extends AppBaseController
 
         $banks = [
             'value' => '',
-            'text' => 'เลือกช่องทางที่ฝาก'
+            'text' => 'เลือกธนาคารที่ต้องการ ใช้ดำเนินการ'
         ];
 
 //        $responses = app('Gametech\Payment\Repositories\BankRepository')->getBankInAccountAll()->toArray();

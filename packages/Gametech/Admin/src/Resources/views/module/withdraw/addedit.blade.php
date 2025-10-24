@@ -496,6 +496,14 @@
             window.app.withdrawModal();
         }
 
+        function DeductModal(id) {
+            window.app.DeductModal(id);
+        }
+
+        function ApproveModal(id) {
+            window.app.ApproveModal(id);
+        }
+
         $(document).ready(function () {
             $("body").tooltip({
                 selector: '[data-toggle="tooltip"]',
@@ -990,17 +998,17 @@
                             // An error occurred
                         })
                 },
-                async refillWithdraw(event) {
+                async withdrawSubmit(event) {
                     event.preventDefault();
                     this.submittingWithdraw = true;
                     this.toggleButtonDisable(true);
 
                     try {
-                        const resp = await this.$http.post("{{ route('admin.'.$menu->currentRoute.'.withdraw') }}", this.formrefill);
+                        const resp = await this.$http.post("{{ route('admin.'.$menu->currentRoute.'.create') }}", this.formwithdraw);
                         const data = resp?.data || {};
                         this.showAlert(data);
                     } catch (e) {
-                        console.log('refill error', e);
+                        console.log('withdraw error', e);
                         this.$bvModal.msgBoxOk('เกิดข้อผิดพลาดระหว่างเชื่อมต่อเซิร์ฟเวอร์', {
                             title: 'เชื่อมต่อไม่สำเร็จ',
                             okVariant: 'danger',
@@ -1034,6 +1042,116 @@
                         buttonSize: 'sm',
                         centered: true
                     });
+                },
+
+                async DeductModal(code) {
+                    try {
+                        const response = await axios.post("{{ route('admin.'.$menu->currentRoute.'.loaddata') }}", { id: code });
+                        const data = response?.data?.data || {};
+                        const user = data?.member_user ? `ไอดีที่จะตัดเครดิตออก : ${data.member_user}` : 'ไม่พบข้อมูล';
+                        const info = data?.amount ? `จำนวนเงิน : ${data.amount}` : 'ไม่พบข้อมูล';
+
+                        const h = this.$createElement;
+                        const messageVNode = h('div', [
+                            h('p', { class: 'text-left' }, [
+                                'ถ้าข้อมูลไอดีถูกต้องแล้ว ให้กด ',
+                                h('strong', 'ตัดเครดิต'),
+                                ' เพื่อทำการหักยอดเงิน ของลูกค้าในเกม.',
+                            ]),
+                            h('p', { class: 'text-info mt-2' }, user),
+                            h('p', { class: 'text-info mt-2' }, info)
+                        ]);
+
+                        const confirmed = await this.$bvModal.msgBoxConfirm([messageVNode], {
+                            title: 'จัดการรายการถอน',
+                            size: 'sm',
+                            buttonSize: 'sm',
+                            okTitle: '✅ ตัดเครดิต',
+                            okVariant: 'success',
+                            cancelVariant: 'danger',
+                            centered: true,
+
+                            // สำคัญ: กันกดด้านนอก/กด ESC แล้วไปต่อโดยไม่ได้ตั้งใจ
+                            noCloseOnBackdrop: true,
+                            noCloseOnEsc: true,
+
+                            // ให้มีปุ่ม X ที่หัว modal
+                            hideHeaderClose: false,
+                            // ปิดแล้วให้คืนโฟกัสปุ่มเดิม (กัน Enter เคลื่อน focus เพี้ยน)
+                            returnFocus: true,
+                        });
+
+                        if (confirmed === true) {
+                            // ไปคอนเฟิร์มรอบสุดท้าย
+                            await this.DeductWithdraw(code);
+                        } else if (confirmed === false) {
+                            // ผู้ใช้กด "User ไม่ถูกต้อง" → ย้อนขั้นตอน
+                            // this.cancelDeposit(code);
+                        }
+                        // กรณีอื่น (เช่น programmatic close) → ไม่ทำอะไร
+                    } catch (err) {
+                        console.error('load data error:', err);
+                        this.$bvModal.msgBoxOk('ไม่สามารถโหลดข้อมูลได้', {
+                            title: 'ข้อผิดพลาด',
+                            size: 'sm',
+                            buttonSize: 'sm',
+                            okVariant: 'danger',
+                            centered: true,
+                            noCloseOnBackdrop: true,
+                            noCloseOnEsc: true,
+                            hideHeaderClose: false,
+                        });
+                    }
+                },
+
+                async DeductWithdraw(code) {
+
+                    const really = await this.$bvModal.msgBoxConfirm('โปรดยืนยันอีกครั้งเพื่อทำรายการ "ตัดเครดิต"', {
+                        title: 'ยืนยันการทำรายการ',
+                        size: 'sm',
+                        buttonSize: 'sm',
+                        okTitle: '✅ ยืนยัน',
+                        cancelTitle: 'ยกเลิก',
+                        okVariant: 'success',
+                        cancelVariant: 'secondary',
+                        centered: true,
+
+                        // กันกดด้านนอก/ESC
+                        noCloseOnBackdrop: true,
+                        noCloseOnEsc: true,
+                        hideHeaderClose: false,
+                        returnFocus: true,
+                    });
+
+                    if (really !== true) {
+                        // ผู้ใช้กดปิด/ยกเลิก → ไม่ทำอะไร
+                        return;
+                    }
+
+                    try {
+                        this.approving = true; this._approving = true;
+
+                        const resp = await this.$http.post("{{ route('admin.'.$menu->currentRoute.'.update') }}", { id: code });
+                        const data = resp?.data || {};
+                        this.showAlert(data);
+                    } catch (err) {
+                        console.error('approve error:', err);
+                        this.$bvModal.msgBoxOk('เกิดข้อผิดพลาดระหว่างเชื่อมต่อเซิร์ฟเวอร์', {
+                            title: 'เชื่อมต่อไม่สำเร็จ',
+                            okVariant: 'danger',
+                            size: 'sm',
+                            buttonSize: 'sm',
+                            centered: true,
+                            noCloseOnBackdrop: true,
+                            noCloseOnEsc: true,
+                            hideHeaderClose: false,
+                        });
+                    } finally {
+                        this.approving = false; this._approving = false;
+                        if (window.LaravelDataTables?.["deposittable"]) {
+                            window.LaravelDataTables["deposittable"].draw(false);
+                        }
+                    }
                 },
             }
         });

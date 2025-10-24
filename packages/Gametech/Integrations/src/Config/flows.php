@@ -15,4 +15,19 @@ return [
             'post'    => config('access.permissions.deposit.post',    'deposit.post.head'),
         ],
     ],
+    'withdraw_default' => [
+        // ใช้ดีไซน์เดียวกับฝั่งฝากเพื่อความคงเส้นคงวา
+        'flow'      => 'three_step',   // create -> check -> approve/post
+        'auto_post' => false,
+        'roles'     => [],             // คงไว้เพื่อ backward-compatible
+        'limits'    => ['min' => 1, 'max' => 200000],
+
+        // mapping action -> permission key (อ่านจาก access เป็นค่าเริ่มต้น)
+        'permissions' => [
+            'create'  => config('access.permissions.withdraw.create',  'withdraw.create'),
+            'check'   => config('access.permissions.withdraw.check',   'withdraw.update'),
+            'approve' => config('access.permissions.withdraw.approve', 'withdraw.approve'),
+            'post'    => config('access.permissions.withdraw.post',    'withdraw.approve'),
+        ],
+    ],
 ];
