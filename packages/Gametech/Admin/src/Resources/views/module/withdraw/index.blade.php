@@ -8,13 +8,13 @@
 
 @section('content')
     <section class="content text-xs" id="content">
-        <div class="row">
-            <div class="col-12">
-                <div class="card card-primary">
+{{--        <div class="row">--}}
+{{--            <div class="col-12">--}}
+{{--                <div class="card card-primary">--}}
 
-                    <form id="frmsearch" method="post" onsubmit="return false;">
-                        <div class="card-body">
-                            <div class="row">
+{{--                    <form id="frmsearch" method="post" onsubmit="return false;">--}}
+{{--                        <div class="card-body">--}}
+{{--                            <div class="row">--}}
 {{--                                <div class="form-group col-12">--}}
 {{--                                    <div class="input-group">--}}
 {{--                                        <div class="input-group-prepend">--}}
@@ -38,16 +38,16 @@
 {{--                                <div class="form-group col-auto">--}}
 {{--                                    <button class="btn btn-primary btn-sm"><i class="fa fa-search"></i> Search</button>--}}
 {{--                                </div>--}}
-                            </div>
-                            <p>* เมื่อเลือกคืนยอด จะมีการคืนยอดเงินเข้า บัญชีของลูกค้า</p>
-                            <p>* ตรวจสอบ ใช้เมื่อต้องการ เชคข้อมูลการเล่นของลูกค้าก่อน อนุมัติ (โอนเงิน) รายการแจ้งถอน (กรณี แยกกันทำงาน ระหว่าง ผู้ตรวจสอบข้อมูลการเล่น กับผู้ที่โอนเงิน)</p>
-                        </div>
-                    </form>
+{{--                            </div>--}}
+{{--                            <p>* เมื่อเลือกคืนยอด จะมีการคืนยอดเงินเข้า บัญชีของลูกค้า</p>--}}
+{{--                            <p>* ตรวจสอบ ใช้เมื่อต้องการ เชคข้อมูลการเล่นของลูกค้าก่อน อนุมัติ (โอนเงิน) รายการแจ้งถอน (กรณี แยกกันทำงาน ระหว่าง ผู้ตรวจสอบข้อมูลการเล่น กับผู้ที่โอนเงิน)</p>--}}
+{{--                        </div>--}}
+{{--                    </form>--}}
 
-                </div>
-                <!-- /.info-box -->
-            </div>
-        </div>
+{{--                </div>--}}
+{{--                <!-- /.info-box -->--}}
+{{--            </div>--}}
+{{--        </div>--}}
         <div class="card">
             <div class="card-body">
                 @includeIf('admin::module.'.$menu->currentRoute.'.create')

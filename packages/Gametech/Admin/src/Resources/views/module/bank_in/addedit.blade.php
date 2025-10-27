@@ -1,6 +1,6 @@
-{{-- Admin Deposit/Refill Modals --}}
-<b-modal ref="addedit" id="addedit" centered size="sm" title="Checking" :no-stacking="true"
-         :no-close-on-backdrop="true" :hide-footer="true" :lazy="true">
+{{-- Admin Deposit/Refill Modals (renamed state to "deposit") --}}
+<b-modal ref="addedit" id="addedit" centered size="sm" title="ตรวจสอบ ข้อมูลรายการฝาก" :no-stacking="true"
+         :no-close-on-backdrop="true" :hide-footer="true" :lazy="true"  @shown="onAddEditShown">
     <b-container class="bv-example-row">
         <b-form @submit.prevent="addEditSubmitNew" v-if="show" id="frmaddedit" ref="frmaddedit">
             <b-form-row>
@@ -73,6 +73,7 @@
                             description="ระบุ User ID ที่ต้องการ เติมเงินรายการนี้">
                         <b-form-input
                                 id="tranferer"
+                                ref="tranferer"
                                 v-model.trim="formaddedit.tranferer"
                                 type="text"
                                 size="sm"
@@ -109,33 +110,47 @@
     </b-container>
 </b-modal>
 
-<b-modal ref="refill" id="refill" centered size="xl" title="เติมเงิน" :no-stacking="true"
-         :no-close-on-backdrop="true" :hide-footer="true" :lazy="true">
+<b-modal ref="deposit" id="deposit" centered size="xl" title="เพิ่ม รายการฝาก" :no-stacking="true"
+         :no-close-on-backdrop="true" :hide-footer="true" :lazy="true" @shown="onDepositShown">
     <b-container class="bv-example-row">
-        <b-form @submit.prevent="refillSubmit" v-if="show">
-            <input type="hidden" id="id" :value="formrefill.id" required>
+        <b-form @submit.prevent="depositSubmit" v-if="show">
+            <input type="hidden" id="id" :value="formdeposit.id" required>
             <b-form-row>
                 <b-col>
                     <b-form-row>
                         <b-col>
                             <b-form-group
-                                    id="input-group-banks"
+                                    id="input-group-user_name"
                                     label="User Name:"
                                     label-for="user_name"
                                     description="ระบุ User ID ที่ต้องการ เติมเงินรายการนี้">
                                 <b-input-group>
                                     <b-form-input
                                             id="user_name"
-                                            v-model.trim="formrefill.user_name"
+                                            ref="user_name"
+                                            v-model.trim="formdeposit.user_name"
+                                            :disabled="searchingDeposit || searchedDeposit"
                                             type="text"
                                             size="sm"
                                             placeholder="User ID"
                                             autocomplete="off"
                                     ></b-form-input>
                                     <b-input-group-append>
-                                        <b-button variant="success" @click="loadUserRefill">ค้นหา</b-button>
+                                        <b-button variant="success"
+                                                  @click="loadUserDeposit"
+                                                  :disabled="searchingDeposit || !formdeposit.user_name">
+                                            <span v-if="searchingDeposit"><b-spinner small class="mr-1"></b-spinner>กำลังค้นหา...</span>
+                                            <span v-else>ค้นหา</span>
+                                        </b-button>
                                     </b-input-group-append>
                                 </b-input-group>
+                                <small v-if="searchedDeposit && userFound.deposit" class="text-success d-block mt-1">
+                                    ✅ พบผู้ใช้แล้ว
+                                </small>
+                                <small v-else-if="searchedDeposit && !userFound.deposit"
+                                       class="text-danger d-block mt-1">
+                                    ไม่พบผู้ใช้
+                                </small>
                             </b-form-group>
                         </b-col>
                     </b-form-row>
@@ -149,7 +164,7 @@
                                     description="">
                                 <b-form-input
                                         id="name"
-                                        v-model="formrefill.name"
+                                        v-model="formdeposit.name"
                                         type="text"
                                         size="sm"
                                         placeholder=""
@@ -163,10 +178,12 @@
 
                     <b-form-row>
                         <b-col>
-                            <b-form-group id="input-group-1" label="จำนวนเงิน:" label-for="amount" description="ระบุจำนวนเงิน ที่ต้องการเติม">
+                            <b-form-group id="input-group-1" label="จำนวนเงิน:" label-for="amount"
+                                          description="ระบุจำนวนเงิน ที่ต้องการเติม">
                                 <b-form-input
                                         id="amount"
-                                        v-model.number="formrefill.amount"
+                                        ref="amount"
+                                        v-model.number="formdeposit.amount"
                                         type="number"
                                         size="sm"
                                         placeholder="จำนวนเงิน"
@@ -174,6 +191,7 @@
                                         step="1"
                                         autocomplete="off"
                                         required
+                                        :disabled="!userFound.deposit || !searchedDeposit"
                                 ></b-form-input>
                             </b-form-group>
                         </b-col>
@@ -184,10 +202,11 @@
                             <b-form-group id="input-group-2" label="ช่องทางที่ฝาก:" label-for="account_code">
                                 <b-form-select
                                         id="account_code"
-                                        v-model="formrefill.account_code"
+                                        v-model="formdeposit.account_code"
                                         :options="banks"
                                         size="sm"
                                         required
+                                        :disabled="!userFound.deposit || !searchedDeposit"
                                 ></b-form-select>
                             </b-form-group>
                         </b-col>
@@ -198,32 +217,42 @@
                             <b-form-group id="input-group-date" label="วันที่โอน:" label-for="date_bank" description="">
                                 <b-form-datepicker
                                         id="date_bank"
-                                        v-model="formrefill.date_bank"
+                                        v-model="formdeposit.date_bank"
                                         size="sm"
                                         placeholder=""
                                         autocomplete="off"
                                         locale="th-TH"
                                         :date-format-options="{ year: 'numeric', month: '2-digit', day: '2-digit' }"
                                         @context="onContext"
+                                        :disabled="!userFound.deposit || !searchedDeposit"
                                 ></b-form-datepicker>
                             </b-form-group>
                         </b-col>
-                    </b-form-row>
 
-                    <b-form-row>
                         <b-col>
-                            <b-form-group id="input-group-timebank" label="เวลาที่โอน:" label-for="time_bank" description="">
+                            <b-form-group id="input-group-timebank" label="เวลาที่โอน:" label-for="time_bank"
+                                          description="">
                                 <b-form-timepicker
                                         id="time_bank"
-                                        v-model="formrefill.time_bank"
+                                        v-model="formdeposit.time_bank"
                                         type="text"
                                         size="sm"
                                         placeholder=""
                                         autocomplete="off"
                                         :hour12="false"
+                                        :disabled="!userFound.deposit || !searchedDeposit"
                                 ></b-form-timepicker>
                             </b-form-group>
                         </b-col>
+                    </b-form-row>
+
+                    <b-form-row class="mb-sm-3">
+                        <b-button type="submit" variant="primary"
+                                  :disabled="submittingDeposit || searchingDeposit || !userFound.deposit || !searchedDeposit || !formdeposit.amount || !formdeposit.account_code"
+                                  class="btn-block">
+                            <span v-if="submittingDeposit"><b-spinner small class="mr-1"></b-spinner>กำลังบันทึก...</span>
+                            <span v-else>บันทึก</span>
+                        </b-button>
                     </b-form-row>
                 </b-col>
 
@@ -239,7 +268,7 @@
                     >
                         <b-table
                                 striped hover small outlined sticky-header show-empty
-                                :items="items" :fields="fields" :busy="isBusy"
+                                :items="items" :fields="fields"
                                 ref="tbdatalog" v-if="show"
                         >
                             <template #table-busy>
@@ -249,13 +278,12 @@
                                 </div>
                             </template>
                             <template #cell(transfer)="data"><span v-html="data.value"></span></template>
-                            <template #cell(credit_type)="data"><span v-html="data.value"></span></template>
+                            <template #cell(user_id)="data"><span v-html="data.value"></span></template>
                             <template #cell(status)="data"><span v-html="data.value"></span></template>
                             <template #cell(action)="data"><span v-html="data.value"></span></template>
                             <template #cell(changepass)="data"><span v-html="data.value"></span></template>
                         </b-table>
 
-                        <!-- (ออปชัน) ใส่ empty-state เวลาข้อมูลว่าง -->
                         <template #overlay>
                             <div class="text-center">
                                 <b-spinner class="mb-2"></b-spinner>
@@ -266,22 +294,27 @@
                 </b-col>
             </b-form-row>
 
-            <b-button type="submit" variant="primary" :disabled="!userFound.refill || submittingRefill">
-                <span v-if="submittingRefill"><b-spinner small class="mr-1"></b-spinner>กำลังบันทึก...</span>
-                <span v-else>บันทึก</span>
-            </b-button>
+
         </b-form>
     </b-container>
 </b-modal>
 
 @push('scripts')
     <script>
-        function clearModal(id) { window.app.clearModal(id); }
-        function approveModal(id) { window.app.approveModal(id); }
-        function refill() { window.app.refill(); }
+        function clearModal(id) {
+            window.app.clearModal(id);
+        }
+
+        function approveModal(id) {
+            window.app.approveModal(id);
+        }
+
+        function deposit() {        // เดิม refill()
+            window.app.depositModal();
+        }
 
         $(document).ready(function () {
-            $("body").tooltip({ selector: '[data-toggle="tooltip"]', container: 'body' });
+            $("body").tooltip({selector: '[data-toggle="tooltip"]', container: 'body'});
         });
     </script>
 
@@ -296,12 +329,20 @@
                     trigger: 0,
                     formmethod: 'edit',
                     // แยก state พบผู้ใช้ต่อ modal
-                    userFound: { addedit: false, refill: false },
+                    userFound: { addedit: false, deposit: false },
                     userTimer: null,
 
+                    submittingSearch: false,
                     submittingAddEdit: false,
-                    submittingRefill: false,
+                    submittingDeposit: false,
                     submittingClear: false,
+
+                    searchingDeposit: false,
+                    searchedDeposit: false,
+
+                    // 🔒 กันกดรัวตอนเปิด approveModal
+                    approvePrompting: false,
+                    approveCooldownUntil: 0,
 
                     formaddedit: {
                         tranferer: '',
@@ -309,7 +350,7 @@
                         time: '',
                         value: '',
                     },
-                    formrefill: {
+                    formdeposit: {
                         id: '',
                         user_name: '',
                         name: '',
@@ -323,45 +364,51 @@
                     formclear: { remark: '' },
 
                     fields: [
-                        { key: 'time', label: 'วันที่รายการ' },
-                        { key: 'time_topup', label: 'วันที่เติม' },
-                        { key: 'bank', label: 'ช่องทางฝาก', class: 'text-center' },
-                        { key: 'amount', label: 'จำนวนเงิน', class: 'text-right' },
-                        { key: 'user_id', label: 'ผู้ทำรายการ', class: 'text-center' },
+                        {key: 'time', label: 'วันที่รายการ'},
+                        {key: 'bank', label: 'ช่องทางฝาก', class: 'text-center'},
+                        {key: 'amount', label: 'จำนวนเงิน', class: 'text-right'},
+                        {key: 'user_id', label: 'ผู้ทำรายการ', class: 'text-center'},
+                        {key: 'status', label: 'สถานะ', class: 'text-center'},
                     ],
                     items: [],
                     caption: null,
                     isBusy: false,
 
-                    option: { banks: [] },
-                    banks: [{ value: '', text: '== ธนาคาร ==' }],
+                    option: {banks: []},
+                    banks: [{value: '', text: '== ธนาคาร =='}],
 
                     method: 'deposit', // ใช้ตอนโหลด log
                 };
             },
             created() {
                 this.audio = document.getElementById('alertsound');
-                if (this.autoCnt) this.autoCnt(true); // คงพฤติกรรมเดิมถ้ามี
+                if (this.autoCnt) this.autoCnt(true);
             },
             mounted() {
                 this.loadBankAccount();
             },
             beforeDestroy() {
-                if (this.userTimer) { clearTimeout(this.userTimer); this.userTimer = null; }
+                if (this.userTimer) {
+                    clearTimeout(this.userTimer);
+                    this.userTimer = null;
+                }
             },
             destroyed() {
-                if (this.userTimer) { clearTimeout(this.userTimer); this.userTimer = null; }
+                if (this.userTimer) {
+                    clearTimeout(this.userTimer);
+                    this.userTimer = null;
+                }
             },
             methods: {
                 onContext(ctx) {
                     this.formatted = ctx.selectedFormatted || '';
-                    this.selected  = ctx.selectedYMD || '';
+                    this.selected = ctx.selectedYMD || '';
                 },
 
                 // ---------- Modal Actions ----------
                 clearModal(code) {
                     this.code = null;
-                    this.formclear = { remark: '' };
+                    this.formclear = {remark: ''};
                     this.formmethod = 'clear';
 
                     this.show = false;
@@ -371,10 +418,23 @@
                         this.$refs.clear && this.$refs.clear.show();
                     });
                 },
-
+                onAddEditShown() {
+                    this.$nextTick(() => {
+                        const r = this.$refs.tranferer
+                        if (r?.focus) r.focus()                          // method ของ b-form-input
+                        else if (r?.$el?.querySelector) r.$el.querySelector('input')?.focus() // fallback
+                    })
+                },
+                onDepositShown() {
+                    this.$nextTick(() => {
+                        const r = this.$refs.user_name
+                        if (r?.focus) r.focus()                          // method ของ b-form-input
+                        else if (r?.$el?.querySelector) r.$el.querySelector('input')?.focus() // fallback
+                    })
+                },
                 editModal(code) {
                     this.code = null;
-                    this.formaddedit = { tranferer: '', bank: '', time: '', value: '' };
+                    this.formaddedit = {tranferer: '', bank: '', time: '', value: ''};
                     this.formmethod = 'edit';
                     this.userFound.addedit = false;
 
@@ -387,7 +447,7 @@
                     });
                 },
 
-                refill() {
+                depositModal() {     // เดิม refill()
                     this.code = null;
                     const now = new Date();
                     const yyyy = now.getFullYear();
@@ -396,26 +456,29 @@
                     const HH = String(now.getHours()).padStart(2, '0');
                     const II = String(now.getMinutes()).padStart(2, '0');
 
-                    this.formrefill = {
+                    this.formdeposit = {
                         id: '',
                         user_name: '',
                         name: '',
-                        amount: 0,
+                        amount: '',
                         account_code: '',
                         date_bank: `${yyyy}-${mm}-${dd}`,
                         time_bank: `${HH}:${II}`,
                         remark_admin: '',
                         one_time_password: ''
                     };
-                    this.userFound.refill = false;
+                    this.userFound.deposit = false;
                     this.method = 'deposit';
                     this.items = [];
                     this.isBusy = false;
 
+                    this.searchingDeposit = false;
+                    this.searchedDeposit = false;
+
                     this.show = false;
                     this.$nextTick(() => {
                         this.show = true;
-                        this.$refs.refill.show();
+                        this.$refs.deposit.show();
                     });
                 },
 
@@ -439,27 +502,33 @@
                     });
                 },
 
+                // 🔒 ป้องกันกดรัว ๆ ที่นี่
                 async approveModal(code) {
+                    const now = Date.now();
+                    if (this.approvePrompting || now < this.approveCooldownUntil) return;
+
+                    this.approvePrompting = true;
+
                     try {
-                        const response = await axios.post("{{ route('admin.'.$menu->currentRoute.'.loaddata') }}", { id: code });
+                        const response = await axios.post("{{ route('admin.'.$menu->currentRoute.'.loaddata') }}", {id: code});
                         const data = response?.data?.data || {};
                         const user = data?.tranferer ? `ไอดีที่จะเติมเงิน : ${data.tranferer}` : 'ไม่พบข้อมูล';
                         const info = data?.value ? `จำนวนเงิน : ${data.value}` : 'ไม่พบข้อมูล';
 
                         const h = this.$createElement;
                         const messageVNode = h('div', [
-                            h('p', { class: 'text-left' }, [
+                            h('p', {class: 'text-left'}, [
                                 'ถ้าไอดีลูกค้าที่ทีมงานใส่มาไม่ถูกต้อง ให้กด ',
                                 h('strong', 'User ไม่ถูกต้อง'),
                                 ' เพื่อย้อนกลับขั้นตอน Check.',
                             ]),
-                            h('p', { class: 'text-left' }, [
+                            h('p', {class: 'text-left'}, [
                                 'ถ้าข้อมูลไอดีถูกต้องแล้ว ให้กด ',
                                 h('strong', 'เติมเงิน'),
                                 ' เพื่อทำรายการเติมเงินเข้าไอดี.',
                             ]),
-                            h('p', { class: 'text-info mt-2' }, user),
-                            h('p', { class: 'text-info mt-2' }, info)
+                            h('p', {class: 'text-info mt-2'}, user),
+                            h('p', {class: 'text-info mt-2'}, info)
                         ]);
 
                         const confirmed = await this.$bvModal.msgBoxConfirm([messageVNode], {
@@ -471,25 +540,17 @@
                             okVariant: 'success',
                             cancelVariant: 'danger',
                             centered: true,
-
-                            // สำคัญ: กันกดด้านนอก/กด ESC แล้วไปต่อโดยไม่ได้ตั้งใจ
                             noCloseOnBackdrop: true,
                             noCloseOnEsc: true,
-
-                            // ให้มีปุ่ม X ที่หัว modal
                             hideHeaderClose: false,
-                            // ปิดแล้วให้คืนโฟกัสปุ่มเดิม (กัน Enter เคลื่อน focus เพี้ยน)
                             returnFocus: true,
                         });
 
                         if (confirmed === true) {
-                            // ไปคอนเฟิร์มรอบสุดท้าย
                             await this.approveDeposit(code);
                         } else if (confirmed === false) {
-                            // ผู้ใช้กด "User ไม่ถูกต้อง" → ย้อนขั้นตอน
-                            this.cancelDeposit(code);
+                            await this.cancelDeposit(code);
                         }
-                        // กรณีอื่น (เช่น programmatic close) → ไม่ทำอะไร
                     } catch (err) {
                         console.error('load data error:', err);
                         this.$bvModal.msgBoxOk('ไม่สามารถโหลดข้อมูลได้', {
@@ -502,12 +563,13 @@
                             noCloseOnEsc: true,
                             hideHeaderClose: false,
                         });
+                    } finally {
+                        this.approvePrompting = false;
+                        this.approveCooldownUntil = Date.now() + 1200; // 1.2s
                     }
                 },
 
                 async approveDeposit(code) {
-                    // กันกดซ้ำ (ถ้าไม่ได้ประกาศ approving ใน data ก็ใช้ _approving ชั่วคราว)
-                    if (this.approving || this._approving) return;
                     const really = await this.$bvModal.msgBoxConfirm('โปรดยืนยันอีกครั้งเพื่อทำรายการ "เติมเงิน"', {
                         title: 'ยืนยันการทำรายการ',
                         size: 'sm',
@@ -517,23 +579,17 @@
                         okVariant: 'success',
                         cancelVariant: 'secondary',
                         centered: true,
-
-                        // กันกดด้านนอก/ESC
                         noCloseOnBackdrop: true,
                         noCloseOnEsc: true,
                         hideHeaderClose: false,
                         returnFocus: true,
                     });
 
-                    if (really !== true) {
-                        // ผู้ใช้กดปิด/ยกเลิก → ไม่ทำอะไร
-                        return;
-                    }
+                    if (really !== true) return;
 
                     try {
-                        this.approving = true; this._approving = true;
-
-                        const resp = await this.$http.post("{{ route('admin.'.$menu->currentRoute.'.approve') }}", { id: code });
+                        this.$blockUI();
+                        const resp = await this.$http.post("{{ route('admin.'.$menu->currentRoute.'.approve') }}", {id: code});
                         const data = resp?.data || {};
                         this.showAlert(data);
                     } catch (err) {
@@ -549,30 +605,58 @@
                             hideHeaderClose: false,
                         });
                     } finally {
-                        this.approving = false; this._approving = false;
+                        this.$unblockUI();
                         if (window.LaravelDataTables?.["deposittable"]) {
                             window.LaravelDataTables["deposittable"].draw(false);
                         }
                     }
                 },
 
+                async cancelDeposit(code) {
+                    const really = await this.$bvModal.msgBoxConfirm('โปรดกด "ยืนยัน" อีกครั้ง ถ้าแต่ใจว่า User ไม่ถูกต้อง', {
+                        title: 'ยืนยันการทำรายการ',
+                        size: 'sm',
+                        buttonSize: 'sm',
+                        okTitle: '✅ ยืนยัน',
+                        cancelTitle: 'ยกเลิก',
+                        okVariant: 'success',
+                        cancelVariant: 'secondary',
+                        centered: true,
+                        noCloseOnBackdrop: true,
+                        noCloseOnEsc: true,
+                        hideHeaderClose: false,
+                        returnFocus: true,
+                    });
 
-                cancelDeposit(code) {
-                    this.$http.post("{{ route('admin.'.$menu->currentRoute.'.cancel') }}", { id: code })
-                        .then(resp => {
-                            const data = resp?.data || {};
-                            this.showAlert(data);
-                        })
-                        .finally(() => {
-                            if (window.LaravelDataTables?.["deposittable"]) {
-                                window.LaravelDataTables["deposittable"].draw(false);
-                            }
+                    if (really !== true) return;
+
+                    try {
+                        this.$blockUI();
+                        const resp = await this.$http.post("{{ route('admin.'.$menu->currentRoute.'.cancel') }}", {id: code});
+                        const data = resp?.data || {};
+                        this.showAlert(data);
+                    } catch (err) {
+                        console.error('approve error:', err);
+                        this.$bvModal.msgBoxOk('เกิดข้อผิดพลาดระหว่างเชื่อมต่อเซิร์ฟเวอร์', {
+                            title: 'เชื่อมต่อไม่สำเร็จ',
+                            okVariant: 'danger',
+                            size: 'sm',
+                            buttonSize: 'sm',
+                            centered: true,
+                            noCloseOnBackdrop: true,
+                            noCloseOnEsc: true,
+                            hideHeaderClose: false,
                         });
+                    } finally {
+                        this.$unblockUI();
+                        if (window.LaravelDataTables?.["deposittable"]) {
+                            window.LaravelDataTables["deposittable"].draw(false);
+                        }
+                    }
                 },
-
                 // ---------- Data Loaders ----------
                 async loadData() {
-                    const response = await axios.post("{{ route('admin.'.$menu->currentRoute.'.loaddata') }}", { id: this.code });
+                    const response = await axios.post("{{ route('admin.'.$menu->currentRoute.'.loaddata') }}", {id: this.code});
                     const d = response?.data?.data || {};
                     this.formaddedit = {
                         value: d.value || '',
@@ -587,7 +671,7 @@
                     if (context === 'addedit') {
                         id = this.formaddedit.tranferer?.trim();
                     } else {
-                        id = this.formrefill.user_name?.trim();
+                        id = this.formdeposit.user_name?.trim();
                     }
 
                     if (!id) {
@@ -598,14 +682,14 @@
                     try {
                         const resp = await axios.post(
                             "{{ route('admin.'.$menu->currentRoute.'.loaduser') }}",
-                            { id }
+                            {id}
                         );
                         const ok = resp?.data?.success === true;
                         this.userFound[context] = ok;
 
-                        if (context === 'refill' && ok) {
-                            this.formrefill.name = resp?.data?.data?.me?.name ?? '';
-                            this.formrefill.id   = resp?.data?.data?.user ?? '';
+                        if (context === 'deposit' && ok) {
+                            this.formdeposit.name = resp?.data?.data?.me?.name ?? '';
+                            this.formdeposit.id = resp?.data?.data?.user ?? '';
                             await this.myLog();
                         }
                     } catch (err) {
@@ -614,15 +698,26 @@
                     }
                 },
 
-                // debounce เวอร์ชันเดียว ใช้ได้ทั้งสอง modal
                 debouncedLoadUser(context = 'addedit') {
                     if (this.userTimer) clearTimeout(this.userTimer);
                     this.userTimer = setTimeout(() => this.loadUser(context), 400);
                 },
 
-                async loadUserRefill() {
-                    // ใช้ loader ปกติ เพื่อรวม logic เดิม
-                    await this.loadUser('refill');
+                async loadUserDeposit() {   // เดิม loadUserRefill
+                    if (!this.formdeposit.user_name) return;
+                    this.searchingDeposit = true;
+                    try {
+                        await this.loadUser('deposit');                 // เซ็ต userFound.deposit
+                        this.searchedDeposit = !!this.userFound.deposit; // ตอนนี้ช่องจะ enable แล้ว
+
+                        // โฟกัสหลังช่องถูก enable
+                        await this.$nextTick();
+                        const r = this.$refs.amount;
+                        if (r?.focus) r.focus();                        // BootstrapVue component method
+                        else if (r?.$el?.querySelector) r.$el.querySelector('input')?.focus(); // fallback DOM
+                    } finally {
+                        this.searchingDeposit = false;
+                    }
                 },
 
                 async myLog() {
@@ -630,20 +725,21 @@
                     this.isBusy = true;
                     try {
                         const response = await axios.get("{{ route('admin.member.gamelog') }}", {
-                            params: { id: this.formrefill.id, method: this.method }
+                            params: {id: this.formdeposit.id, method: this.method}
                         });
                         this.caption = response?.data?.name || '';
                         this.items = response?.data?.list || [];
+                        this.submittingSearch = false;
                     } finally {
-                        // กันแฟลช: ดีเลย์ 150–250ms
-                        setTimeout(() => { this.isBusy = false; }, 200);
+                        setTimeout(() => {
+                            this.isBusy = false;
+                            this.submittingSearch = false;
+                        }, 200);
                     }
                 },
 
                 async loadBankAccount() {
-
                     try {
-
                         const response = await axios.get("{{ route('admin.member.loadbankaccount') }}");
                         this.banks = response?.data?.banks || this.banks;
                     } catch (e) {
@@ -652,17 +748,18 @@
                 },
 
                 // ---------- Submits ----------
-                async refillSubmit(event) {
+                async depositSubmit(event) {  // เดิม refillSubmit
                     event.preventDefault();
-                    this.submittingRefill = true;
+                    this.submittingDeposit = true;
                     this.toggleButtonDisable(true);
-
+                    this.$blockUI();
                     try {
-                        const resp = await this.$http.post("{{ route('admin.'.$menu->currentRoute.'.refill') }}", this.formrefill);
+                        // NOTE: ยังยิงไปที่ route เดิม เพื่อไม่ไปกระทบ backend
+                        const resp = await this.$http.post("{{ route('admin.'.$menu->currentRoute.'.refill') }}", this.formdeposit, { meta: { block: 'global' }});
                         const data = resp?.data || {};
                         this.showAlert(data);
                     } catch (e) {
-                        console.log('refill error', e);
+                        console.log('deposit error', e);
                         this.$bvModal.msgBoxOk('เกิดข้อผิดพลาดระหว่างเชื่อมต่อเซิร์ฟเวอร์', {
                             title: 'เชื่อมต่อไม่สำเร็จ',
                             okVariant: 'danger',
@@ -671,7 +768,8 @@
                             centered: true
                         });
                     } finally {
-                        this.submittingRefill = false;
+                        this.$unblockUI();
+                        this.submittingDeposit = false;
                         this.toggleButtonDisable(false);
                         if (window.LaravelDataTables?.["deposittable"]) {
                             window.LaravelDataTables["deposittable"].draw(false);
@@ -683,7 +781,7 @@
                     event.preventDefault();
                     this.submittingAddEdit = true;
                     this.toggleButtonDisable(true);
-
+                    this.$blockUI();
                     let url;
                     if (this.formmethod === 'add') {
                         url = "{{ url($menu->currentRoute.'/create') }}";
@@ -692,9 +790,9 @@
                     }
 
                     const formData = new FormData();
-                    const json = JSON.stringify({ tranferer: this.formaddedit.tranferer });
+                    const json = JSON.stringify({tranferer: this.formaddedit.tranferer});
                     formData.append('data', json);
-                    const config = { headers: { 'Content-Type': `multipart/form-data; boundary=${formData._boundary}` } };
+                    const config = {headers: {'Content-Type': `multipart/form-data; boundary=${formData._boundary}`}};
 
                     axios.post(url, formData, config)
                         .then(response => {
@@ -713,7 +811,6 @@
                                     window.LaravelDataTables["deposittable"].draw(false);
                                 }
                             } else {
-                                // สมมติ res.message เป็น object ของ invalid fields
                                 const msg = res?.message;
                                 if (msg && typeof msg === 'object') {
                                     Object.keys(msg).forEach((id) => {
@@ -740,6 +837,7 @@
                         })
                         .catch(errors => console.log(errors))
                         .finally(() => {
+                            this.$unblockUI();
                             this.submittingAddEdit = false;
                             this.toggleButtonDisable(false);
                         });
@@ -749,6 +847,7 @@
                     event.preventDefault();
                     this.submittingClear = true;
                     this.toggleButtonDisable(true);
+                    this.$blockUI();
 
                     this.$http.post("{{ url($menu->currentRoute.'/clear') }}", {
                         id: this.code,
@@ -780,64 +879,83 @@
                             });
                         })
                         .finally(() => {
+                            this.$unblockUI();
                             this.submittingClear = false;
                             this.toggleButtonDisable(false);
                         });
                 },
 
-                delModal(code) {
-                    this.$bvModal.msgBoxConfirm('ต้องการดำเนินการ ลบข้อมูลหรือไม่.', {
-                        title: 'โปรดยืนยันการทำรายการ',
+                async delModal(code) {
+
+                    const confirmed = await this.$bvModal.msgBoxConfirm('ต้องการดำเนินการ ลบข้อมูล รายการนี้ หรือไม่', {
+                        title: 'ยืนยันการทำรายการ',
                         size: 'sm',
                         buttonSize: 'sm',
-                        okVariant: 'danger',
-                        okTitle: 'ตกลง',
+                        okTitle: '✅ ยืนยัน',
                         cancelTitle: 'ยกเลิก',
-                        footerClass: 'p-2',
+                        okVariant: 'success',
+                        cancelVariant: 'secondary',
+                        centered: true,
+                        noCloseOnBackdrop: true,
+                        noCloseOnEsc: true,
                         hideHeaderClose: false,
-                        centered: true
-                    })
-                        .then(value => {
-                            if (value) {
+                        returnFocus: true,
+                    });
 
-                                this.$http.post("{{ url($menu->currentRoute.'/delete') }}", {
-                                    id: code
-                                })
-                                    .then(response => {
-                                        this.$bvModal.msgBoxOk(response.data.message, {
-                                            title: 'ผลการดำเนินการ',
-                                            size: 'sm',
-                                            buttonSize: 'sm',
-                                            okVariant: 'success',
-                                            headerClass: 'p-2 border-bottom-0',
-                                            footerClass: 'p-2 border-top-0',
-                                            centered: true
-                                        });
-                                        window.LaravelDataTables["deposittable"].draw(false);
-                                    })
-                                    .catch(exception => {
-                                        console.log('error');
-                                    })
-                                    .finally(() => {
-                                        if (window.LaravelDataTables?.["deposittable"]) {
-                                            window.LaravelDataTables["deposittable"].draw(false);
-                                        }
-                                    });
-                            }
-                        })
-                        .catch(err => {
-                            // An error occurred
-                        })
+                    if (confirmed === true) {
+                        await this.delDeposit(code);
+                    }
+
                 },
 
+                async delDeposit(code) {
+                    const really = await this.$bvModal.msgBoxConfirm('โปรดกด "ยืนยัน" อีกครั้ง ถ้าแต่ใจว่า ต้องการลบข้อมูล', {
+                        title: 'ยืนยันการทำรายการ',
+                        size: 'sm',
+                        buttonSize: 'sm',
+                        okTitle: '✅ ยืนยัน',
+                        cancelTitle: 'ยกเลิก',
+                        okVariant: 'success',
+                        cancelVariant: 'secondary',
+                        centered: true,
+                        noCloseOnBackdrop: true,
+                        noCloseOnEsc: true,
+                        hideHeaderClose: false,
+                        returnFocus: true,
+                    });
+
+                    if (really !== true) return;
+
+                    try {
+                        this.$blockUI();
+                        const resp = await this.$http.post("{{ route('admin.'.$menu->currentRoute.'.delete') }}", {id: code});
+                        const data = resp?.data || {};
+                        this.showAlert(data);
+                    } catch (err) {
+                        console.error('approve error:', err);
+                        this.$bvModal.msgBoxOk('เกิดข้อผิดพลาดระหว่างเชื่อมต่อเซิร์ฟเวอร์', {
+                            title: 'เชื่อมต่อไม่สำเร็จ',
+                            okVariant: 'danger',
+                            size: 'sm',
+                            buttonSize: 'sm',
+                            centered: true,
+                            noCloseOnBackdrop: true,
+                            noCloseOnEsc: true,
+                            hideHeaderClose: false,
+                        });
+                    } finally {
+                        this.$unblockUI();
+                        if (window.LaravelDataTables?.["deposittable"]) {
+                            window.LaravelDataTables["deposittable"].draw(false);
+                        }
+                    }
+                },
                 // ---------- Helpers ----------
                 toggleButtonDisable(disabled) {
-                    // hook สำหรับปุ่มอื่น ๆ ที่อยู่นอก scope Vue (ถ้ามี)
-                    // เวอร์ชันนี้คุมผ่านแฟล็ก submitting เป็นหลักแล้ว
                     try {
                         const btn = document.getElementById('btnchecking');
                         if (btn) btn.disabled = !!disabled;
-                    } catch(_) {}
+                    } catch (_) {}
                 },
 
                 showAlert(data) {

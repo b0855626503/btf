@@ -208,7 +208,7 @@ class MemberRepository extends Repository
         return $user->bankPayments()
             ->income()
             ->active()
-            ->orderBy('date_topup', 'desc')
+            ->orderBy('id', 'desc')
             ->when($date_start, function ($query, $date_start) use ($date_stop) {
                 $start = $date_start . ' 00:00:00';
                 $stop = $date_stop . ' 23:59:59';
@@ -219,21 +219,24 @@ class MemberRepository extends Repository
 
     public function loadWithdraw($id, $date_start = null, $date_stop = null)
     {
-        // หาสมาชิกจาก user id
+        // หา member_code ให้เร็ว (แนะนำ cache 30s)
         $user = $this->findByField('user', $id)->first();
-
-        // ถ้าไม่เจอ user → คืน collection ว่าง
         if (!$user) return collect();
 
-        return $user->withdraws()
-            ->where('transection_type',1)
-            ->active()
-            ->orderBy('ckb_date', 'desc')
-            ->when($date_start, function ($query, $date_start) use ($date_stop) {
-                $start = $date_start . ' 00:00:00';
-                $stop = $date_stop . ' 23:59:59';
-                return $query->whereBetween('date_create', [$start, $stop]);
-            })->limit(5)
+        // default ช่วงเวลา เมื่อส่ง start แต่ไม่ส่ง stop
+        if ($date_start && !$date_stop) $date_stop = $date_start;
+
+        $q = $user->withdraws()   // หรือ Withdraw::query()->where('member_code', $user->me->code)
+//        ->select(['code','user_create','amount','status','date_create','date_record','timedept','ck_withdraw']) // เลือกเท่าที่ต้องใช้
+        ->where('transection_type', 1)
+            ->active();
+
+        if ($date_start) {
+            $q->whereBetween('date_create', ["{$date_start} 00:00:00", "{$date_stop} 23:59:59"]);
+        }
+
+        return $q->orderByDesc('code')   // ← ถ้าใช้ได้ ให้เปลี่ยนมาเรียงด้วย id
+        ->limit(5)
             ->get();
     }
 

@@ -7,10 +7,7 @@
 
 {!! $dataTable->table(['id' => 'withdrawtable','width' => '100%', 'class' => 'table table-striped table-sm']) !!}
 
-<hr>
-<table width="100%" class="table table-bordered" id="customfooter" style="font-size: medium">
-    <tbody></tbody>
-</table>
+
 @push('scripts')
     <script src="{{ asset('vendor/daterangepicker/daterangepicker.js') }}"></script>
     <script>
@@ -61,33 +58,5 @@
 
     {!! $dataTable->scripts() !!}
 
-    <script>
-        $(function () {
-            var table = window.LaravelDataTables["withdrawtable"];
 
-            window.LaravelDataTables["withdrawtable"].on('draw', function () {
-                $("#customfooter tbody").html('');
-
-                let html = '<tr>';
-                html += '<th style="text-align:right;width:80%;color:blue">รวมยอดถอนเงิน (ทั้งหมด)</th><th style="text-align:right;color:blue;">' + table.ajax.json().in_all + '</th>';
-                html += '</tr>';
-                html += '<tr>';
-                html += '<th style="text-align:right;width:80%;color:blue">รวมยอดถอนเงิน (รออนุมัติ)</th><th style="text-align:right;color:blue;">' + table.ajax.json().in_wait + '</th>';
-                html += '</tr>';
-                html += '<tr>';
-                html += '<th style="text-align:right;width:80%;color:blue">รวมยอดถอนเงิน (อนุมัติ)</th><th style="text-align:right;color:blue;">' + table.ajax.json().in_yes + '</th>';
-                html += '</tr>';
-                html += '<tr>';
-                html += '<th style="text-align:right;width:80%;color:blue">รวมยอดถอนเงิน (ไม่อนุมัติ)</th><th style="text-align:right;color:blue;">' + table.ajax.json().in_no + '</th>';
-                html += '</tr>';
-
-
-                $("#customfooter tbody").append(html);
-
-
-            });
-
-
-        });
-    </script>
 @endpush

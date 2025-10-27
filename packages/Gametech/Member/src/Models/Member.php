@@ -109,9 +109,9 @@ class Member extends Authenticatable implements MemberContract
         return $this->belongsTo(BankProxy::modelClass(), 'bank_code');
     }
 
-    public function refer(): BelongsTo
+    public function referCode(): BelongsTo
     {
-        return $this->belongsTo(ReferProxy::modelClass(), 'refer_code');
+        return $this->belongsTo(ReferProxy::modelClass(), 'refers');
     }
 
     public function up(): BelongsTo

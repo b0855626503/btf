@@ -604,12 +604,32 @@ class MemberController extends AppBaseController
         $responses = $responses->map(function ($items) {
             $item = (object)$items;
 
+            // ค่าพื้นฐาน
+            $user = $item->create_by;
+            $statusText = '<span class="px-2 py-1 rounded bg-secondary text-white">ไม่ทราบสถานะ</span>';
+
+            $pill = fn($bg, $text) => "<span class='d-inline-block px-2 py-1 pill w-100 text-nowrap fw-semibold text-white' style='background:$bg;'>$text</span>";
+
+
+            // === แยกเงื่อนไขตาม flow ที่ให้มา ===
+            if ($item->status == 0 && $item->checkstatus === 'N') {
+                $user = $item->create_by.'<br>[ แจ้งฝาก ]';
+                $statusText = $pill('darkred', 'รอตรวจสอบ');
+            } elseif ($item->status == 0 && $item->checkstatus === 'Y' && $item->topupstatus === 'N') {
+                $user = $item->check_user.'<br>[ ตรวจสอบ ]';
+                $statusText = $pill('#17a2b8', 'รอเติมเงิน'); // ฟ้า
+            } elseif ($item->status == 1) {
+                $user = $item->user_id.'<br>[ เติมเงิน ]';
+                $statusText = $pill('#28a745', 'เติมเงินแล้ว'); // เขียว
+            }
+
             return [
-                'time' => core()->formatDate($item->time, 'd/m/y H:i'),
+                'time'       => core()->formatDate($item->date_create, 'd/m/y H:i:s'),
                 'time_topup' => core()->formatDate($item->date_topup, 'd/m/y H:i'),
-                'amount' => $item->value,
-                'bank' => $item->bank,
-                'user_id' => $item->user_id,
+                'amount'     => $item->value,
+                'bank'       => $item->bank,
+                'user_id'    => $user,
+                'status'     => $statusText,
             ];
 
         });
@@ -619,33 +639,73 @@ class MemberController extends AppBaseController
 
     public function gamewithdraw($id)
     {
-        $config = core()->getConfigData();
-        if ($config->seamless == 'Y') {
-            $responses = collect($this->memberRepository->loadWithdrawSeamless($id, '', '')->toArray());
+        $responses = collect($this->memberRepository->loadWithdraw($id, '', '')->toArray());
 
-        } else {
-            $responses = collect($this->memberRepository->loadWithdraw($id, '', '')->toArray());
-
-        }
 //        $responses = collect($this->memberRepository->loadWithdraw($id, '', '')->toArray());
 
         $responses = $responses->map(function ($items) {
             $item = (object)$items;
-            $status = ['0' => 'รอโอนเงิน', '1' => 'โอนเงินสำเร็จ', '2' => 'ยกเลิก'];
 
+            $user = $item->user_create;
+            $statusText = '<span class="px-2 py-1 rounded bg-secondary text-white">ไม่ทราบสถานะ</span>';
+
+            $pill = fn($bg, $text) => "<span class='d-inline-block px-2 py-1 pill w-100 text-nowrap fw-semibold text-white' style='background:$bg;'>$text</span>";
+
+
+            // === แยกเงื่อนไขตาม flow ที่ให้มา ===
+            if ($item->status == 0 && $item->ck_withdraw === 'N') {
+                $user = $item->user_create.'<br>[ แจ้งถอน ]';
+                $statusText = $pill('darkred', 'รอตัดเครดิต');
+            } elseif ($item->status == 0 && $item->ck_withdraw === 'Y' && $item->ck_balance === 'N') {
+                $user = $item->ck_user.'<br>[ ตัดเครดิต ]';
+                $statusText = $pill('#17a2b8', 'รอโอนเงิน'); // ฟ้า
+            } elseif ($item->status == 1) {
+                $user = $item->ckb_user.'<br>[ โอนเงิน ]';
+                $statusText = $pill('#28a745', 'โอนแล้ว'); // เขียว
+            }
 
             return [
-                'id' => '#WD' . Str::of($item->code)->padLeft(8, 0),
-                'date_create' => core()->formatDate($item->date_create, 'd/m/Y H:i'),
+                'time' => core()->formatDate($item->date_create, 'd/m/y H:i:s'),
                 'amount' => $item->amount,
-                'credit_before' => $item->oldcredit,
-                'credit_after' => $item->aftercredit,
-                'status_display' => $status[$item->status]
+                'user_id' => $user,
+                'status' => $statusText
             ];
 
         });
 
-        return $responses->take(50)->values()->all();
+        return $responses->values()->all();
+    }
+
+    public function loadRefer()
+    {
+        $banks = [
+            'value' => '',
+            'text' => 'โปรดเลือก แหล่งอ้างอิง'
+        ];
+
+        $responses = collect(app('Gametech\Core\Repositories\ReferRepository')->findWhere(['enable' => 'Y'])->toArray());
+
+        $responses = $responses->map(function ($items) {
+            $item = (object)$items;
+            return [
+                'value' => $item->code,
+                'text' => $item->name
+            ];
+
+        })->prepend($banks);
+
+
+        $result['banks'] = $responses;
+        return $this->sendResponseNew($result, 'complete');
+    }
+
+    public function loadConfig()
+    {
+       $config = core()->getConfigData();
+       $data = [
+           'userid' => ($config->member+1)
+       ];
+        return $this->sendResponse($data, 'complete');
     }
 
     public function loadBank()
@@ -687,7 +747,7 @@ class MemberController extends AppBaseController
             $item = (object)$items;
 //            dd($item);
             return [
-                'value' => $item->bank . '_' . $item->accountno,
+                'value' => $item->code,
                 'text' => strtoupper($item->bank) . ' - ' . $item->accountno . ' [' . $item->accountname . ']'
             ];
 

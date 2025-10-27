@@ -37,6 +37,8 @@ class BankPayment extends Model implements BankPaymentContract
         'enable',
         'bankstatus',
         'bankname',
+        'bank_code',
+        'account_code',
         'txid',
         'time',
         'channel',
@@ -65,11 +67,16 @@ class BankPayment extends Model implements BankPaymentContract
         'check_user',
         'checkstatus',
         'topupstatus',
-        'create_by'
+        'create_by',
+        'ck_step1',
+        'ck_step2',
+        'ck_step3',
     ];
 
     protected $casts = [
-        'checktime' => 'integer'
+        'checktime' => 'datetime',
+        'date_topup' => 'datetime',
+        'time' => 'datetime',
     ];
 
     /**
@@ -156,7 +163,7 @@ class BankPayment extends Model implements BankPaymentContract
 
     public function banks()
     {
-        return $this->belongsTo(BankProxy::modelClass(), 'bankname','shortcode');
+        return $this->belongsTo(BankProxy::modelClass(), 'bank_code','code');
     }
 
 

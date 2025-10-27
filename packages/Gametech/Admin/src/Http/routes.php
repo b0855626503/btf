@@ -844,6 +844,11 @@ Route::domain(config('app.admin_url') . '.' . (is_null(config('app.admin_domain_
 
                 Route::get('loadbank', $route['controller'] . '@loadBank')->name('admin.' . $route['name'] . '.loadbank');
 
+                Route::get('loadrefer', $route['controller'] . '@loadRefer')->name('admin.' . $route['name'] . '.loadrefer');
+
+                Route::get('loadconfig', $route['controller'] . '@loadConfig')->name('admin.' . $route['name'] . '.loadconfig');
+
+
                 Route::get('loadbankaccount', $route['controller'] . '@loadBankAccount')->name('admin.' . $route['name'] . '.loadbankaccount');
 
                 Route::post('loadbankaccountuser', $route['controller'] . '@loadBankAccountUser')->name('admin.' . $route['name'] . '.loadbankaccountuser');

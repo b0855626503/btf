@@ -23,7 +23,7 @@ class WithdrawDataTable extends DataTable
     {
         $dataTable = new EloquentDataTable($query);
 
-        return $dataTable->setTransformer(new WithdrawTransformer);
+        return $dataTable->skipTotalRecords()->setTransformer(new WithdrawTransformer);
 
     }
 
@@ -111,7 +111,7 @@ class WithdrawDataTable extends DataTable
                 'stateSave' => true,
                 'scrollX' => true,
 
-                'paging' => true,
+                'paging' => false,
                 'searching' => false,
                 'deferRender' => true,
                 'retrieve' => true,
@@ -124,7 +124,7 @@ class WithdrawDataTable extends DataTable
                     ['50 rows', '100 rows', '200 rows', '500 rows', '1000 rows']
                 ],
                 'buttons' => [
-                    'pageLength'
+
                 ],
                 'columnDefs' => [
                     ['targets' => '_all', 'className' => 'text-nowrap']
@@ -162,8 +162,8 @@ class WithdrawDataTable extends DataTable
 //            ['data' => 'amount', 'name' => 'withdraws.amount', 'title' => 'ยอดถอน', 'orderable' => false, 'searchable' => true, 'className' => 'text-right'],
 //            ['data' => 'ip', 'name' => 'withdraws.ip', 'title' => 'IP', 'orderable' => false, 'searchable' => true, 'className' => 'text-left text-nowrap'],
 //            ['data' => 'bonus', 'name' => 'bonus', 'title' => 'โบนัสล่าสุด', 'orderable' => false, 'searchable' => false, 'className' => 'text-left text-nowrap'],
-            ['data' => 'user_create', 'name' => 'deposits.user_create', 'title' => 'ผู้รับเรื่อง', 'orderable' => false, 'searchable' => false, 'className' => 'text-left text-nowrap'],
-            ['data' => 'waiting', 'name' => 'waiting', 'title' => 'ตัดยอด', 'orderable' => false, 'searchable' => false, 'className' => 'text-center text-nowrap'],
+            ['data' => 'user_create', 'name' => 'deposits.user_create', 'title' => 'แจ้งถอนโดย', 'orderable' => false, 'searchable' => false, 'className' => 'text-center text-nowrap'],
+            ['data' => 'waiting', 'name' => 'waiting', 'title' => 'ตัดเครดิต', 'orderable' => false, 'searchable' => false, 'className' => 'text-center text-nowrap'],
             ['data' => 'approve', 'name' => 'approve', 'title' => 'โอนเงิน', 'orderable' => false, 'searchable' => false, 'className' => 'text-center text-nowrap'],
             ['data' => 'delete', 'name' => 'delete', 'title' => 'ลบ', 'orderable' => false, 'searchable' => false, 'className' => 'text-center text-nowrap'],
         ];

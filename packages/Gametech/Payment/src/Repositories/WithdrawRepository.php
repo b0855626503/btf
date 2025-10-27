@@ -8,6 +8,7 @@ use Gametech\LogUser\Http\Traits\ActivityLoggerUser;
 use Gametech\Member\Repositories\MemberCreditLogRepository;
 use Gametech\Member\Repositories\MemberLogRepository;
 use Gametech\Member\Repositories\MemberRepository;
+use Gametech\Payment\Models\Withdraw;
 use Illuminate\Container\Container as App;
 use Illuminate\Support\Facades\DB;
 use Throwable;
@@ -49,6 +50,12 @@ class WithdrawRepository extends Repository
 
         parent::__construct($app);
     }
+
+    public function findForUpdate(int $id)
+    {
+        return Withdraw::where('code',$id)->lockForUpdate()->first();
+    }
+
 
     /**
      * @param $id
@@ -366,6 +373,6 @@ class WithdrawRepository extends Repository
      */
     function model(): string
     {
-        return 'Gametech\Payment\Contracts\Withdraw';
+        return \Gametech\Payment\Models\Withdraw::class;
     }
 }

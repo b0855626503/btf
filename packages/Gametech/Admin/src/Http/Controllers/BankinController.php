@@ -5,6 +5,7 @@ namespace Gametech\Admin\Http\Controllers;
 use Gametech\Admin\DataTables\BankinDataTable;
 use Gametech\Member\Models\MemberWebProxy;
 use Gametech\Member\Repositories\MemberRepository;
+use Gametech\Payment\Repositories\BankAccountRepository;
 use Gametech\Payment\Repositories\BankPaymentRepository;
 
 // ✅ ใช้ Orchestrator (ฝาก)
@@ -14,6 +15,7 @@ use Gametech\Integrations\Services\DepositOrchestrator;
 use Gametech\Integrations\ProviderManager;
 use Gametech\Integrations\Contracts\ApproveContext;
 
+use Gametech\Payment\Repositories\BankRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -24,16 +26,22 @@ class BankinController extends AppBaseController
     protected $_config;
     protected $repository;
     protected $memberRepository;
+    protected $bankRepository;
+    protected $bankAccountRepository;
 
     public function __construct(
         BankPaymentRepository $repository,
-        MemberRepository      $memberRepository
+        MemberRepository      $memberRepository,
+        BankRepository $bankRepository,
+        BankAccountRepository $bankAccountRepository,
     )
     {
         $this->_config = request('_config');
         $this->middleware('admin');
         $this->repository = $repository;
         $this->memberRepository = $memberRepository;
+        $this->bankRepository = $bankRepository;
+        $this->bankAccountRepository = $bankAccountRepository;
     }
 
     public function index(BankinDataTable $bankinDataTable)
@@ -65,7 +73,7 @@ class BankinController extends AppBaseController
 
     public function destroy(Request $request)
     {
-        $user = $this->user()->name . ' ' . $this->user()->surname;
+        $user = $this->user()->name;
         $id = $request->input('id');
 
         $chk = $this->repository->find($id);
@@ -85,9 +93,7 @@ class BankinController extends AppBaseController
         $id = $request->input('id');
         $item = $this->repository->find($id);
         $data = $item?->only(['value', 'bank', 'tranferer']) + [
-                'time' => $item?->time
-                    ? \Carbon\Carbon::createFromTimestamp((int)$item->time)->format('d/m/y H:i:s')
-                    : null,
+                'time' => $item?->time->format('d/m/y H:i:s'),
             ];
 
         if (empty($data)) return $this->sendError('ไม่พบข้อมูลดังกล่าว', 200);
@@ -118,7 +124,7 @@ class BankinController extends AppBaseController
         if (!($res['success'] ?? false)) {
             return $this->sendError($res['msg'] ?? 'ยืนยันล้มเหลว', 200);
         }
-        return $this->sendSuccess('บันทึกข้อมูลไอดีลูกค้า เรียบร้อยแล้ว');
+        return $this->sendSuccess($res['msg']);
     }
 
     /**
@@ -153,7 +159,7 @@ class BankinController extends AppBaseController
         $request->validate([
             'id' => 'required',
             'amount' => 'required|numeric',
-            'account_code' => 'required|string',
+            'account_code' => 'required|integer',
             'date_bank' => 'required|date_format:Y-m-d',
             'time_bank' => 'required|date_format:H:i',
         ]);
@@ -161,25 +167,32 @@ class BankinController extends AppBaseController
         $id = $request->input('id');
         $amount = (float)$request->input('amount');
         $account = $request->input('account_code');
-        $banks = explode('_', $account);
-        $bank = $banks[0] ?? '';
+
 
         if ($amount < 1) return $this->sendError('ยอดเงินไม่ถูกต้อง', 200);
+
+        $bankAccount = $this->bankAccountRepository->with('banks')->find($account);
+        if(!$bankAccount){
+            return $this->sendError('ไม่พบ บัญชีที่ฝากเข้ามา', 200);
+        }
 
         $banktime = Carbon::createFromFormat('Y-m-d H:i', $request->date_bank . ' ' . $request->time_bank);
 
         // 1) สร้างผ่าน Orchestrator
         $payment = $flow->create([
-            'bank' => $account,
+            'ck_step1' => $user->code,
+            'bankname' => $bankAccount->banks?->shortcode,
             'bankstatus' => 1,
-            'bankname' => strtoupper($bank),
+            'bank_code' => $bankAccount->banks?->code,
+            'account_code' => $account,
+            'bank' => strtolower($bankAccount->bank).'_'.$bankAccount->accountno,
             'channel' => 'MANUAL',
             'value' => $amount,
             'tranferer' => $id, // ถ้าไม่รู้ user ให้ส่งเป็น '' แล้วไป confirm ทีหลัง
-            'detail' => 'เพิ่มรายการฝากโดย Staff : ' . $user->name . ' ' . $user->surname,
+            'detail' => 'เพิ่มรายการฝากโดย Staff : ' . $user->user_name,
             'source' => 'manual',
             'source_ref' => null,
-            'time' => $banktime->timestamp
+            'time' => $banktime->toDateTimeString()
         ], $user);
 
         // 2) ถ้าระบุ user มาแล้ว → confirm ให้เลย
@@ -196,18 +209,31 @@ class BankinController extends AppBaseController
         return $this->sendSuccess('สร้างรายการฝากเรียบร้อย (รอยืนยัน/เติมตามขั้นตอน)');
     }
 
-    public function cancel(Request $request)
+    public function cancel(Request $request, DepositOrchestrator $flow)
     {
+        $user = $this->user();
         $id = $request->input('id');
-        $chk = $this->repository->find($id);
-        if (!$chk) return $this->sendError('ไม่พบข้อมูลดังกล่าว', 200);
+//        $chk = $this->repository->find($id);
+//        if (!$chk) return $this->sendError('ไม่พบข้อมูลดังกล่าว', 200);
 
-        $data = [
-            'tranferer' => '',
-            'check_user' => '',
-            'checking' => 'N',
-        ];
-        $this->repository->update($data, $id);
+//        $data = [
+//            'ck_step2' => null,
+//            'tranferer' => '',
+//            'check_user' => '',
+//            'checking' => 'N',
+//            'checkstatus' => 'N',
+//        ];
+
+//        $this->repository->update($data, $id);
+
+        $res = $flow->cancel($id, $user);
+        if (!($res['success'] ?? false)) {
+            return $this->sendError($res['msg'] ?? 'มีปัญหาบางประการ ในการทำรายการ', 200);
+        }
+        return response()->json([
+            'success' => true,
+            'message' => $res['msg'] ?? 'เติมเงิน สำเร็จ',
+        ]);
 
         return $this->sendSuccess('ดำเนินการเสร็จสิ้น');
     }

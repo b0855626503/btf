@@ -29,6 +29,6 @@
     </ul>
 </nav>
 <!-- /.navbar -->
-<nav class="main-header navbar navbar-expand navbar-light announce text-danger" id="announce"></nav>
+{{--<nav class="main-header navbar navbar-expand navbar-light announce text-danger" id="announce"></nav>--}}
 
 

@@ -3,13 +3,17 @@
 namespace Gametech\Integrations\Services;
 
 use Carbon\Carbon;
+use Gametech\Auto\Jobs\PaymentOutKingPay;
 use Gametech\Core\Models\WebsiteProxy;
 use Gametech\Integrations\AclAuthorizer;
 use Gametech\Integrations\Contracts\ApproveContext;
 use Gametech\Integrations\ProviderManager;
 use Gametech\Integrations\Support\ConfigStore;
 use Gametech\Member\Models\MemberWebProxy;
-use Gametech\Payment\Repositories\WithdrawRepository; // หากคุณใช้สัญญา เปลี่ยนเป็น Contracts\WithdrawRepository
+use Gametech\Payment\Repositories\BankAccountRepository;
+use Gametech\Payment\Repositories\WithdrawRepository;
+
+// หากคุณใช้สัญญา เปลี่ยนเป็น Contracts\WithdrawRepository
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Gametech\Payment\Models\Withdraw;
@@ -21,8 +25,9 @@ class WithdrawOrchestrator
     public function __construct(
         private ProviderManager       $providers,
         private AclAuthorizer         $acl,
-        private WithdrawRepository $repository,
+        private WithdrawRepository    $withdrawRepository,
         private ConfigStore           $configStore,
+        private BankAccountRepository $bankAccountRepo,   // ⬅️ เพิ่มตัวนี้
     )
     {
     }
@@ -36,13 +41,13 @@ class WithdrawOrchestrator
     private function policy(): array
     {
         $defaults = [
-            'flow'       => 'three_step', // 'two_step'|'three_step'
-            'auto_post'  => false,
-            'permissions'=> [
-                'create'  => 'withdraw.create',
-                'check'   => 'withdraw.update',
+            'flow' => 'three_step', // 'two_step'|'three_step'
+            'auto_post' => false,
+            'permissions' => [
+                'create' => 'withdraw.create',
+                'check' => 'withdraw.update',
                 'approve' => 'withdraw.approve',
-                'post'    => 'withdraw.approve', // ใช้คีย์เดียวกับ approve (ตามดีไซน์ของคุณ)
+                'post' => 'withdraw.update', // ใช้คีย์เดียวกับ approve (ตามดีไซน์ของคุณ)
             ],
         ];
 
@@ -54,7 +59,7 @@ class WithdrawOrchestrator
 
         // 2) fallback จากไฟล์ config
         $fileAccess = config('integrations.access.withdraw', []);
-        $fileFlow   = config('integrations.flows.withdraw', null);
+        $fileFlow = config('integrations.flows.withdraw', null);
 
         if (is_array($fileAccess)) {
             $cfg = array_replace_recursive($fileAccess, $cfg);
@@ -88,31 +93,6 @@ class WithdrawOrchestrator
     }
 
     /**
-     * กันการข้ามสเต็ปตาม flow ที่กำหนด
-     */
-    private function assertFlowStep(string $currentStep, array $state, array $policy): void
-    {
-        // คุณสามารถปรับกติกาเช็คสถานะจริง ๆ ของโมเดล/เรคคอร์ดได้ที่นี่
-        // ตัวอย่างเชิงสัญลักษณ์ (ถ้าระบบคุณเก็บ state เช่น 'created', 'checked', 'approved' ที่ record):
-        // - กำลัง "check" ต้องผ่าน "create" แล้ว
-        // - กำลัง "approve" ต้องผ่าน "check" แล้ว (สำหรับ three_step)
-        // หมายเหตุ: กติกานี้เป็นกรอบทั่วไป — ปรับให้ตรงกับ status ของตาราง withdraw จริง
-        if ($policy['flow'] === 'three_step') {
-            if ($currentStep === 'check' && empty($state['created'])) {
-                throw new \RuntimeException('ผิดลำดับขั้นตอน: ยังไม่ได้สร้างรายการ');
-            }
-            if ($currentStep === 'approve' && (empty($state['created']) || empty($state['checked']))) {
-                throw new \RuntimeException('ผิดลำดับขั้นตอน: ยังไม่ตรวจสอบรายการ');
-            }
-        } else {
-            // two_step: อาจยุบเหลือ create → approve
-            if ($currentStep === 'approve' && empty($state['created'])) {
-                throw new \RuntimeException('ผิดลำดับขั้นตอน: ยังไม่ได้สร้างรายการ');
-            }
-        }
-    }
-
-    /**
      * อนุมัติ/โอนให้ลูกค้า (step: approve [+ post])
      * หมายเหตุ: สำหรับสายถอน คุณตั้งใจให้ post ใช้ permission เดียวกับ approve
      */
@@ -122,7 +102,7 @@ class WithdrawOrchestrator
         $this->acl->must($actor, $policy['permissions']['check']);
 
         /** @var Withdraw|null $p */
-        $p = $this->repository>find($withdrawId);
+        $p = $this->withdrawRepository->find($withdrawId);
         if (!$p) {
             return $this->fail('ไม่พบรายการ');
         }
@@ -141,13 +121,12 @@ class WithdrawOrchestrator
     {
         // โหลด policy/permission
         $policy = $this->policy();
-        $perm = $policy['permissions'] ?? [];
         $flow = $policy['flow'] ?? 'two_step';
 
-        $this->acl->must($actor, $policy['permissions']['check']);
+        $this->acl->must($actor, $policy['permissions']['post']);
 
         /** @var Withdraw|null $p */
-        $p = $this->repository->find($withdrawId);
+        $p = $this->withdrawRepository->find($withdrawId);
         if (!$p) {
             return $this->fail('ไม่พบรายการ');
         }
@@ -169,6 +148,8 @@ class WithdrawOrchestrator
             ->where('code', $p->code)
             ->where('ck_withdraw', 'N')
             ->update(['ck_withdraw' => 'Y']);
+
+//        dd($updated);
 
         if ($updated === 0) {
             return $this->fail('มีคนอื่นเริ่มทำก่อนหน้า');
@@ -208,7 +189,7 @@ class WithdrawOrchestrator
 
                 $res = $provider->approve($ctx);
                 if (!$res->success) {
-                    throw new \RuntimeException($res->msg ?: 'เติมเงินล้มเหลว');
+                    throw new \RuntimeException($res->msg ?: 'ถอนเงินล้มเหลว');
                 }
 
                 // อัปเดตยอดฝั่งเรา
@@ -222,7 +203,7 @@ class WithdrawOrchestrator
                     'aftercredit' => $res->after_credit,
                     'webbefore' => $webBefore,
                     'webafter' => $webAfter,
-                    'ck_user' => $actor->name ?? 'system',
+                    'ck_user' => $actor->user_name ?? 'system',
                     'ck_withdraw' => 'Y',
                     'ck_date' => now()->toDateTimeString(),
                 ]);
@@ -263,36 +244,139 @@ class WithdrawOrchestrator
         /** @var Withdraw $payment */
         $withdraw = DB::transaction(function () use ($data) {
 
-            return $this->repository->create($data);
+            return $this->withdrawRepository->create($data);
 
         });
 
         return $withdraw;
     }
 
-    public function confirm(int $withdrawId, object $actor): array
+    // Orchestrator
+    public function confirm(int $withdrawId, object $actor, array $dto = []): array
     {
-        $policy = $this->policy();
-        $this->acl->must($actor, $policy['permissions']['approve']);
+        $this->acl->must($actor, $this->policy()['permissions']['approve']);
 
-        /** @var Withdraw|null $p */
-        $p = $this->repository->find($withdrawId);
-        if (!$p) {
-            return $this->fail('ไม่พบรายการ');
-        }
-        if ((int)$p->status !== 0) {
-            return $this->fail('รายการนี้ ดำเนินการเสร็จสิ้นทุกชั้นตอนแล้ว');
-        }
+        return DB::transaction(function () use ($withdrawId, $actor, $dto) {
 
+            $p = $this->withdrawRepository->findForUpdate($withdrawId);
+            if (!$p) {
+                return $this->fail('ไม่พบรายการ');
+            }
+            if ((int)$p->status === 1) {
+                return $this->fail('รายการนี้ ดำเนินการเสร็จสิ้นทุกขั้นตอนแล้ว');
+            }
 
-        $p->bankout = 'Y';
-        $p->checktime = strtotime(date('Y-m-d H:i:s'));
-        $p->checkstatus = 'Y';
-        $p->check_user = $actor->user_name ?? 'system';
-        $p->msg = 'success';
-        $p->save();
+            // --- เริ่มจากเซ็ตค่าเริ่มต้น ป้องกัน undefined ---
+            $acc = null;
+            $return = ['success' => 'NORMAL', 'msg' => '' ]; // ดีฟอลต์กันเคสไม่มีการตั้งค่า
+//            Log::channel('cashback')->info('dtc' , [ 'dtc' => $dto ]);
+            // (ออปชัน) map account ที่ใช้ดำเนินการ
+            if (isset($dto['account_code'])) {
+                $acc = $this->bankAccountRepo->findActiveByCode($dto['account_code'], $p->webcode ?? null);
+//                Log::channel('cashback')->info('acc' , [ 'acc' => $acc ]);
+                // ลบ dd() ออก — ห้ามหยุด flow ในโปรดักชัน
+                // dd($acc);
 
-        return $this->ok('ยืนยันรายการแล้ว');
+                if (!$acc) {
+                    return $this->fail('บัญชีที่ใช้ดำเนินการไม่ถูกต้อง');
+                }
+
+                // ตั้งค่าฟิลด์ตาม schema ที่คุณมีจริง
+                $p->bank = $acc->code ?? $dto['account_code'];
+
+                // สร้างข้อความ bankout อย่างระมัดระวัง (เช็คว่ามี relation/field ไหม)
+                $bankName = $acc->bank;
+                $accNo    = $acc->accountno;
+                $p->bankout = trim($bankName . ' ' . $accNo);
+
+            }
+
+            // (ออปชัน) เวลาโอนจริง
+            $transferAt = $dto['transfer_at'] ?? null;
+            if (!$transferAt && !empty($dto['date_bank']) && !empty($dto['time_bank'])) {
+                $transferAt = "{$dto['date_bank']} {$dto['time_bank']}:00";
+            }
+
+            // เก็บรูปแบบเดิมของตารางคุณ (หากต้องการ timestamp)
+            // ถ้าอยากเก็บแยกคอลัมน์ก็ใช้สองฟิลด์ด้านล่างแทน
+            // $p->date_bank = $transferAt ? Carbon::parse($transferAt)->timestamp : now()->timestamp;
+
+            if (array_key_exists('fee', $dto)) {
+                $p->fee = max(0, (float)$dto['fee']);
+            }
+
+            // เก็บค่าจากฟอร์มแบบแยกคอลัมน์ (ตามที่คุณใช้อยู่)
+            $p->date_bank = $dto['date_bank'] ?? $p->date_bank;
+            $p->time_bank = $dto['time_bank'] ?? $p->time_bank;
+
+            $p->ckb_date   = now()->toDateTimeString();
+            $p->ck_balance = 'Y';
+            $p->ck_step2   = $actor->code;
+            $p->ckb_user   = $actor->user_name ?? 'system';
+//            $p->msg        = 'success';
+            // อย่าเพิ่งตั้งเป็น 1 ถ้ายังต้องวิ่ง payment; ตั้งตอนตัดสินใจ flow
+//            $p->status     = 1;
+
+            // --- ตัดสินใจเส้นทาง Payment / Manual ---
+            $isPayment = ($acc && (($acc->payment ?? 'N') === 'Y' || ($acc->status_auto ?? 'N') === 'Y'));
+
+            if ($isPayment) {
+                // Payment Gateway path
+                $p->status = 9;              // processing
+                $p->status_withdraw = 'A';   // processing
+                $p->save();
+
+                // เคสเฉพาะ bankid = 201 เรียก job ตรงนี้
+                if (($acc->bankid ?? null) === 304) {
+                    // สังเกต: dispatchNow อาจคืนค่าไม่ใช่ array; ใส่ตัวกันไว้
+                    $res = PaymentOutKingPay::dispatchNow($withdrawId);
+                    if (is_array($res)) {
+                        $return = $res;
+                    } else {
+                        // กัน null/ผิดรูปแบบ
+                        $return = ['success' => 'FAIL_AUTO', 'msg' => 'ผลลัพธ์จาก PaymentOutKingPay ไม่ถูกต้อง'];
+                    }
+                }
+
+                // ตีความผลลัพธ์อย่างระวัง (ใช้ค่า default ที่ตั้งไว้ด้านบนด้วย)
+                switch ($return['success']) {
+                    case 'NORMAL':
+                        // โอนไปเรียบร้อยตามปกติ
+                        $p->status = 1;
+                        $p->status_withdraw = 'W';
+                        $p->save();
+                        break;
+
+                    case 'NOMONEY':
+                    case 'FAIL_AUTO':
+                        // rollback สถานะแบบที่คุณต้องการ
+                        $p->ck_step2   = 0;
+                        $p->ckb_user   = '';
+                        $p->ck_balance = 'N';
+                        $p->txid       = '';
+                        $p->bank       = 0;
+                        $p->bankout    = '';
+                        $p->status     = 0;
+                        $p->status_withdraw = 'W';
+                        $p->save();
+                        break;
+
+                    case 'COMPLETE':
+                    case 'NOTWAIT':
+                    case 'MONEY':
+                        // ถ้าต้องการเคสพิเศษ เพิ่ม logic ตรงนี้
+                        break;
+                }
+
+                return $this->ok($return['msg'] ?? 'ส่งคำสั่ง Payment แล้ว');
+
+            } else {
+                // Manual path
+                $p->status = 1;
+                $p->save();
+                return $this->ok('อนุมัติรายการเรียบร้อยแล้ว');
+            }
+        });
     }
 
     private function checkReady(Withdraw $p, string $flow): array
@@ -300,11 +384,11 @@ class WithdrawOrchestrator
         // ต้องยืนยัน username ก่อนเสมอ
 
         // ถ้าเป็น three_step ต้องผ่าน confirm (checking/checkstatus) มาก่อน
-        if ($flow === 'three_step') {
-            if ($p->ck_withdraw !== 'Y') {
-                return ['ok' => false, 'msg' => 'รายการยังไม่ผ่านการยืนยัน'];
-            }
-        }
+//        if ($flow === 'three_step') {
+//            if ($p->ck_withdraw !== 'Y') {
+//                return ['ok' => false, 'msg' => 'รายการยังไม่ผ่านการยืนยัน'];
+//            }
+//        }
 
         // ต้องยังไม่สำเร็จ
         if ((int)$p->status === 1) {

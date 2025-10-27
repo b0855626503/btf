@@ -21,7 +21,9 @@
     })
 </script>
 <script type="module">
-
+    function getEl() {
+        return document.getElementById('app-blocker')
+    }
         Vue.mixin({
             data() {
                 return {
@@ -34,7 +36,13 @@
                     playPromise: undefined,
                     audio: {},
                     toast: '',
-                    withdraw_cnt: 0
+                    withdraw_cnt: 0,
+                    _pendingCount: 0,
+                    _appBlocking: false,
+                    _blockEnabled: false,
+                    _openTimer: null,
+                    _closeTimer: null,
+
                 };
             },
 
@@ -49,6 +57,25 @@
                 }
             },
             methods: {
+                $blockUI() {
+                    const el = getEl()
+                    if (!el) return
+                    el.classList.remove('d-none')
+                    document.body.classList.add('is-blocking')
+                },
+                $unblockUI() {
+                    const el = getEl()
+                    if (!el) return
+                    el.classList.add('d-none')
+                    document.body.classList.remove('is-blocking')
+                },
+                $toggleBlockUI() {
+                    const el = getEl()
+                    if (!el) return
+                    el.classList.toggle('d-none')
+                    document.body.classList.toggle('is-blocking', !el.classList.contains('d-none'))
+                },
+
                 ToastPlay() {
                     this.toast.error('<span class="text-danger">มีการถอนรายการใหม่</span>');
                 },
@@ -267,15 +294,21 @@
                     // document.getElementById('badge_confirm_wallet').textContent = response.data.payment_waiting;
                     // document.getElementById('badge_member_confirm').textContent = response.data.member_confirm;
                     if (this.loopcnts == 0) {
-                        document.getElementById('announce').textContent = response.data.announce;
-                        this.runMarquee();
+                        if(document.getElementById('announce')) {
+                            document.getElementById('announce').textContent = response.data.announce;
+                            this.runMarquee();
+                        }
+
                     } else {
                         if (response.data.announce_new == 'Y') {
                             this.announce.on('finished', (event) => {
-                                document.getElementById('announce').textContent = response.data.announce;
-                                this.announce.trigger('destroy');
-                                this.announce.off('finished');
-                                this.runMarquee();
+                                if(document.getElementById('announce')) {
+                                    document.getElementById('announce').textContent = response.data.announce;
+                                    this.announce.trigger('destroy');
+                                    this.announce.off('finished');
+                                    this.runMarquee();
+                                }
+
                             });
 
                         }

@@ -39,7 +39,7 @@ class DepositOrchestrator
                 'create'  => 'deposit.create',
                 'check'   => 'deposit.check',
                 'approve' => 'deposit.approve',
-                'post'    => 'deposit.post.head', // ผู้อนุมัติขั้นสุดท้าย (หัวหน้า)
+                'post'    => 'deposit.approve', // ผู้อนุมัติขั้นสุดท้าย (หัวหน้า)
             ],
         ];
 
@@ -95,8 +95,11 @@ class DepositOrchestrator
         $now = Carbon::now();
 
         $data = [
+            'ck_step1' => $actor->code,
             'bank' => $payload['bank'] ?? null,
             'bankname' => $payload['bankname'] ?? null,
+            'account_code' => $payload['account_code'] ?? 0,
+            'bank_code' => $payload['bank_code'] ?? 0,
             'channel' => $payload['channel'] ?? 'API',
             'value' => (float)($payload['value'] ?? 0),
 
@@ -116,13 +119,13 @@ class DepositOrchestrator
             'source_ref' => $payload['source_ref'] ?? null,
 
             // audit
-            'create_by' => trim(($actor->name ?? 'system') . ' ' . ($actor->surname ?? '')),
+            'create_by' => trim(($actor->user_name ?? 'system')),
 
-            'checktime' => strtotime(date('Y-m-d H:i:s')) ?? $now,
-            'time' => isset($payload['time']) ? (int)$payload['time'] : time(),
+//            'checktime' => strtotime(date('Y-m-d H:i:s')) ?? $now,
+            'time' => $payload['time'],
         ];
 
-        if ($data['value'] < 0.01) {
+        if ($data['value'] < 1) {
             throw new \InvalidArgumentException('ยอดเงินไม่ถูกต้อง');
         }
 
@@ -172,14 +175,15 @@ class DepositOrchestrator
             $p->tranferer = $username;
         }
 
+        $p->ck_step2 = $actor->code;
         $p->checking = 'Y';
-        $p->checktime = strtotime(date('Y-m-d H:i:s'));
+        $p->checktime = now()->toDateTimeString();
         $p->checkstatus = 'Y';
         $p->check_user = $actor->user_name ?? 'system';
         $p->msg = 'success';
         $p->save();
 
-        return $this->ok('ยืนยันรายการแล้ว');
+        return $this->ok('ยืนยันสำเร็จแล้ว โปรด รอการอนุมัติรายการ เพื่อเติมเงินเข้าไอดี');
     }
 
     /**
@@ -193,17 +197,21 @@ class DepositOrchestrator
         /** @var BankPayment|null $p */
         $p = $this->bankPayments->find($paymentId);
         if (!$p) {
-            return $this->fail('ไม่พบรายการ');
+            return $this->fail('ไม่พบรายการ ไม่สามารถอนุมัติ รายการนี้ได้');
         }
         if ((int)$p->status !== 0 || $p->checkstatus !== 'Y') {
             return $this->fail('ต้องยืนยันรายการก่อน หรือสถานะไม่ถูกต้อง');
+        }
+
+        if ($p->enable !== 'Y') {
+            return $this->fail('ผิดพลาด รายการนี้ถูกลบแล้ว');
         }
 
         // ตรงนี้แค่ mark/บันทึกข้อความ (ถ้าธุรกิจต้องการ field เพิ่ม สามารถขยายได้)
         $p->msg = 'approved_by: ' . ($actor->user_name ?? 'system');
         $p->save();
 
-        return $this->ok('อนุมัติรายการแล้ว');
+        return $this->ok('อนุมัติรายการแล้ว รอระบบเติมเงินเข้าไอดีเรียบร้อย');
     }
 
     /**
@@ -229,7 +237,10 @@ class DepositOrchestrator
             return $this->fail('รายการนี้ทำสำเร็จไปแล้ว');
         }
         if ($p->topupstatus === 'Y') {
-            return $this->fail('มีคนกำลังทำรายการนี้อยู่');
+            return $this->fail('รายการนี้ถูกดำเนินการแล้ว');
+        }
+        if ($p->enable !== 'Y') {
+            return $this->fail('รายการถูกลบแล้ว');
         }
 
         // ตรวจความพร้อมแบบรวม
@@ -294,6 +305,7 @@ class DepositOrchestrator
                 $website->save();
 
                 $p->fill([
+                    'ck_step3' => $actor->code,
                     'webcode' => $member->web_code,
                     'status' => 1,
                     'oldcredit' => $res->old_credit,
@@ -307,7 +319,7 @@ class DepositOrchestrator
                 ]);
                 $p->save();
 
-                return $this->ok('เติมเงินสำเร็จ', [
+                return $this->ok('เติมเงินเข้าไอดีลูกค้า เรียบร้อยแล้ว', [
                     'old' => $res->old_credit,
                     'after' => $res->after_credit,
                 ]);
@@ -324,6 +336,32 @@ class DepositOrchestrator
             ]);
             return $this->fail($e->getMessage() ?: 'มีปัญหาบางประการ');
         }
+    }
+
+    public function cancel(int $paymentId, object $actor): array
+    {
+        $policy = $this->policy();
+        $this->acl->must($actor, $policy['permissions']['approve']);
+
+        /** @var BankPayment|null $p */
+        $p = $this->bankPayments->find($paymentId);
+        if (!$p) {
+            return $this->fail('ไม่พบรายการ');
+        }
+        if ((int)$p->status !== 0 || $p->checkstatus !== 'Y') {
+            return $this->fail('ต้องยืนยันรายการก่อน หรือสถานะไม่ถูกต้อง');
+        }
+        $p->ck_step2 = null;
+        $p->tranferer = '';
+        $p->check_user = '';
+        $p->checking = 'N';
+        $p->checkstatus = 'N';
+
+        // ตรงนี้แค่ mark/บันทึกข้อความ (ถ้าธุรกิจต้องการ field เพิ่ม สามารถขยายได้)
+//        $p->msg = 'approved_by: ' . ($actor->user_name ?? 'system');
+        $p->save();
+
+        return $this->ok('ดำเนินการ ปฏิเสธรายการแล้ว โปรดรอผู้ตรวจสอบ ดำเนินการใหม่อีกครั้ง');
     }
 
     /**

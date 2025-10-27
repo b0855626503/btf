@@ -15,15 +15,15 @@ class BankinTransformer extends TransformerAbstract
     }
 
     /** ปุ่มยืนยัน/เติม (แทน blade: datatables_refill) */
-    protected function buildConfirmHtml(int $code, int $status, string $txid, string $autocheck, string $checkUser, string $checktime): string
+    protected function buildConfirmHtml(int $code, int $status, string $txid, string $checkstatus, string $checkUser, string $checktime): string
     {
         // เงื่อนไขจาก blade เดิม:
         // 1) status == 0 && txid == ''  -> ปุ่ม + เรียก editModal
         // 2) status == 0 && txid != '' && autocheck != 'W' -> ปุ่ม ✔ เรียก approveModal
-        if ($status === 0 && $autocheck === 'N') {
+        if ($status === 0 && $checkstatus === 'N') {
             return $this->btn('btn-secondary', '<i class="fas fa-search"></i>', "editModal({$code})");
         }
-        if ($status === 0 && $autocheck === 'Y') {
+        if ($status === 0 && $checkstatus === 'Y') {
             return $txid. '<br>[ '.$checkUser.' ]<br>'.$checktime;
         }
         return '';
@@ -63,15 +63,19 @@ class BankinTransformer extends TransformerAbstract
         $status    = (int) ($model->status ?? 0);
         $txid      = (string) ($model->tranferer ?? '');
         $checkUser      = (string) ($model->check_user ?? '');
-        $autocheck = (string) ($model->checking ?? 'N');
+        $checkstatus = (string) ($model->checkstatus ?? 'N');
+        $topuopstatus = (string) ($model->topupstatus ?? 'N');
+        $autocheck = (string) ($model->checkstatus ?? 'N');
 //        $checktime =  core()->formatDate($model->checktime,'d/m/y H:i:s');
-        $checktime =  date('d/m/y H:i:s', $model->checktime);
+        $checktime =  $model->checktime?->format('d/m/y H:i:s') ?? '';
+        $create_by = $model->create_by ?? '';
+        $date_create = $model->date_create->format('d/m/y H:i:s') ?? '';
 
         // โลโก้ธนาคารของบัญชีรับเงิน (bank_account->bank)
         static $bankCache = [];
 //        dd($model->banks?->filepic);
         $bankHtml = '';
-        if ($model->bank && $model->bankname) {
+        if ($model->bank_code && $model->account_code) {
             $bank = explode('_',$model->bank);
             $short = (string) $bank[1];
 //            dd($short);
@@ -82,6 +86,8 @@ class BankinTransformer extends TransformerAbstract
             }
             $bankHtml = $bankCache[$key];
         }
+//        $dateHtml =  $model->tranferer;
+        $dateHtml = $txid ? $txid.'<br> [ '.$create_by.' ] <br>'.$date_create : '[ '.$create_by.' ] <br>'.$date_create;
 
         // ช่องทาง + ผู้บันทึก
         $channelText = (string) ($model->channel ?? '');
@@ -101,10 +107,10 @@ class BankinTransformer extends TransformerAbstract
             'channel'    => $channelHtml,
             'detail'     => $detailHtml,
             'value'      => '<span style="color:blue">'.(string) $model->value.'</span>',
-            'date'       => $model->date_create ? $model->date_create->format('d/m/y H:i:s') : '',
+            'date'       => $dateHtml,
 
             // ปุ่ม inline ทั้งหมด (ไม่ใช้ view()->render())
-            'check'    => $this->buildConfirmHtml($code, $status, $txid, $autocheck,$checkUser,$checktime),
+            'check'    => $this->buildConfirmHtml($code, $status, $txid, $checkstatus,$checkUser,$checktime),
             'topup'       => $this->buildEditHtml($code, $status,$autocheck),
 //            'cancel'     => $this->buildCancelHtml($code, $status),
             'delete'     => $this->buildDeleteHtml($code, $status),

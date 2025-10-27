@@ -26,31 +26,100 @@
         .toast-container {
             z-index: 9999;
         }
+
         /* base */
         /*.toastify.rt-toast { position: relative; }*/
 
         /* ธีมระดับ (ถ้าใช้ t.level) */
-        .toastify.rt-danger  { background: #ef4444 !important; color: #fff !important; }
-        .toastify.rt-warning { background: #f59e0b !important; color: #111 !important; }
-        .toastify.rt-success { background: #10b981 !important; color: #fff !important; }
-        .toastify.rt-info    { background: #3b82f6 !important; color: #fff !important; }
+        .toastify.rt-danger {
+            background: #ef4444 !important;
+            color: #fff !important;
+        }
+
+        .toastify.rt-warning {
+            background: #f59e0b !important;
+            color: #111 !important;
+        }
+
+        .toastify.rt-success {
+            background: #10b981 !important;
+            color: #fff !important;
+        }
+
+        .toastify.rt-info {
+            background: #3b82f6 !important;
+            color: #fff !important;
+        }
 
         /* แถบสีซ้ายเล็ก ๆ (สวยขึ้นนิด) */
         .toastify.rt-toast::before {
-            content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; opacity: .6;
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            opacity: .6;
         }
-        .toastify.rt-danger::before  { background: #7f1d1d; }
-        .toastify.rt-warning::before { background: #92400e; }
-        .toastify.rt-success::before { background: #065f46; }
-        .toastify.rt-info::before    { background: #1e3a8a; }
+
+        .toastify.rt-danger::before {
+            background: #7f1d1d;
+        }
+
+        .toastify.rt-warning::before {
+            background: #92400e;
+        }
+
+        .toastify.rt-success::before {
+            background: #065f46;
+        }
+
+        .toastify.rt-info::before {
+            background: #1e3a8a;
+        }
 
         /* ถ้าอยากใช้ Bootstrap class โดยตรง (bg-*) */
-        .toastify.bg-warning { background-color: #ffc107 !important; background-image: none !important; color: #212529 !important; border: #000 2px solid !important; }
-        .toastify.bg-danger  { background-color: #dc3545 !important; background-image: none !important; color: #fff !important; border: #000 2px solid !important; }
-        .toastify.bg-success { background-color: #198754 !important; background-image: none !important; color: #fff !important; border: #000 2px solid !important;  }
-        .toastify.bg-info    { background-color: #0dcaf0 !important; background-image: none !important; color: #000 !important; border: #000 2px solid !important;  }
+        .toastify.bg-warning {
+            background-color: #ffc107 !important;
+            background-image: none !important;
+            color: #212529 !important;
+            border: #000 2px solid !important;
+        }
 
+        .toastify.bg-danger {
+            background-color: #dc3545 !important;
+            background-image: none !important;
+            color: #fff !important;
+            border: #000 2px solid !important;
+        }
+
+        .toastify.bg-success {
+            background-color: #198754 !important;
+            background-image: none !important;
+            color: #fff !important;
+            border: #000 2px solid !important;
+        }
+
+        .toastify.bg-info {
+            background-color: #0dcaf0 !important;
+            background-image: none !important;
+            color: #000 !important;
+            border: #000 2px solid !important;
+        }
+        .app-preloader{
+            position: fixed;
+            inset: 0; /* top:0; right:0; bottom:0; left:0 */
+            z-index: 3000; /* สูงกว่า modal/backdrop ของ AdminLTE */
+            background: rgba(0,0,0,.25);
+            backdrop-filter: blur(2px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        body.is-blocking { overflow: hidden; }
     </style>
+    <style>[v-cloak]{display:none!important}</style>
+
     @yield('css')
 
     <script>
@@ -67,9 +136,10 @@
     @laravelPWA
 </head>
 
-<body class="hold-transition sidebar-mini text-sm">
+<body class="hold-transition sidebar-mini text-sm pace-big-counter-success">
 
-<div id="app">
+<div id="app" v-cloak>
+
 
     <div class="wrapper">
 
@@ -81,6 +151,10 @@
 
         @include('admin::layouts.footer')
 
+    </div>
+    <div id="app-blocker" class="app-preloader d-none flex-column justify-content-center align-items-center">
+        <b-icon icon="stopwatch" font-scale="3" animation="cylon"></b-icon>
+        <p id="cancel-label">Please wait...</p>
     </div>
 
 
@@ -110,234 +184,148 @@
 <script baseUrl="{{ url()->to('/') }}" id="mainscript" src="{{ mix('assets/admin/js/app.js') }}"></script>
 {{--<script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.8.0/dist/alpine.min.js" defer></script>--}}
 <script src="{{ asset('assets/ui/js/ui.js') }}"></script>
+{{--<script src="{{ asset('assets/admin/js/global-mixin.js?v=1') }}"></script>--}}
 {{--<script src="{{ asset('vendor/toasty/dist/toasty.min.js') }}"></script>--}}
 
 @stack('scripts')
 @yield('script')
-<script type="text/javascript">
+<script>
+    // ถ้าอยากปิด realtime dev ชั่วคราว ให้ตั้ง flag นี้ก่อน
+    const RT_DISABLED = true;
 
-    // window.Echo = new Echo({
-    //     broadcaster: 'pusher',
-    //     key: process.env.PUSHER_APP_KEY,
-    //     wsHost: window.location.hostname,
-    //     disableStats: true,
-    //     authEndpoint: '/broadcasting/auth'
-    // });
-    let reloadTimer = null;
+    if (!RT_DISABLED) {
+        let reloadTimer = null;
 
-    {{--Echo.private('{{ config('app.name')  }}_events')--}}
-    {{--    .listen('RealTimeMessage', (e) => {--}}
-    {{--        Toastify({--}}
-    {{--            text: e.message,--}}
-    {{--            duration: 20000,--}}
-    {{--            newWindow: true,--}}
-    {{--            close: true,--}}
-    {{--            gravity: "top", // `top` or `bottom`--}}
-    {{--            position: "right", // `left`, `center` or `right`--}}
-    {{--            stopOnFocus: true, // Prevents dismissing of toast on hover--}}
-    {{--        }).showToast();--}}
-    {{--        // window.Toasty.info(e.message);--}}
-    {{--        // window.app.loadCnt();--}}
+        function handleRT(e) {
+            if (e.ui === 'swal') {
+                if (typeof Swal !== 'undefined') Swal.fire(e.swal);
+                return;
+            }
 
-    {{--    })--}}
-    // .listen('SumNewPayment', (e) => {
-    //     if (document.getElementById('badge_bank_in')) {
-    //         document.getElementById('badge_bank_in').textContent = e.sum;
-    //     }
-    //
-    //     if ($('#deposittable').length && $.fn.DataTable.isDataTable('#deposittable')) {
-    //         if (reloadTimer) clearTimeout(reloadTimer);
-    //         reloadTimer = setTimeout(() => {
-    //             window.LaravelDataTables["deposittable"].draw(false);
-    //         }, 2000);
-    //     }
-    //
-    // })
-    // .listen('SumNewWithdraw', (e) => {
-    //     if (document.getElementById('badge_withdraw')) {
-    //         document.getElementById('badge_withdraw').textContent = e.sum;
-    //     }
-    //     if (document.getElementById('badge_withdraw_seamless')) {
-    //         document.getElementById('badge_withdraw_seamless').textContent = e.sum;
-    //     }
-    //
-    //     if (e.type === 'up') {
-    //         let count = 0;
-    //         const intervalId = setInterval(() => {
-    //             // แสดงแจ้งเตือน
-    //             window.Toasty.error('<span class="text-danger">มีการ แจ้งถอนรายการใหม่</span>');
-    //
-    //             // เพิ่มตัวนับ
-    //             count++;
-    //
-    //             // ตรวจสอบว่าแจ้งเตือนครบ 5 รอบหรือยัง
-    //             if (count === 2) {
-    //                 // หยุดตัวจับเวลา
-    //                 clearInterval(intervalId);
-    //             }
-    //         }, 3000);  // 1000 มิลลิวินาที คือ 1 วินาที
-    //
-    //     }
-    //
-    //     if ($('#withdrawtable').length && $.fn.DataTable.isDataTable('#withdrawtable')) {
-    //         window.LaravelDataTables["withdrawtable"].draw(true);
-    //     }
-    // })
-    // .listen('SumNewWithdrawFree', (e) => {
-    //     if (document.getElementById('badge_withdraw_free')) {
-    //         document.getElementById('badge_withdraw_free').textContent = e.sum;
-    //     }
-    //     if (document.getElementById('badge_withdraw_seamless_free')) {
-    //         document.getElementById('badge_withdraw_seamless_free').textContent = e.sum;
-    //     }
-    //
-    //     if (e.type === 'up') {
-    //         let count = 0;
-    //         const intervalId = setInterval(() => {
-    //             // แสดงแจ้งเตือน
-    //             window.Toasty.error('<span class="text-danger">มีการ แจ้งถอนรายการฟรี ใหม่</span>');
-    //
-    //             // เพิ่มตัวนับ
-    //             count++;
-    //
-    //             // ตรวจสอบว่าแจ้งเตือนครบ 5 รอบหรือยัง
-    //             if (count === 2) {
-    //                 // หยุดตัวจับเวลา
-    //                 clearInterval(intervalId);
-    //             }
-    //         }, 3000);  // 1000 มิลลิวินาที คือ 1 วินาที
-    //
-    //     }
-    //
-    //     if ($('#withdrawfreetable').length && $.fn.DataTable.isDataTable('#withdrawfreetable')) {
-    //         window.LaravelDataTables["withdrawfreetable"].draw(true);
-    //     }
-    // });
+            const t = e.toast || {};
+            const level = (e.level || t.level || '').toLowerCase(); // 'danger' | 'warning' | 'success' | 'info'
+            const classes = ['rt-toast'];
+            if (level) classes.push(`rt-${level}`);
+            if (t.className) classes.push(t.className); // ใช้ร่วมกับคลาส Bootstrap ได้ เช่น 'bg-warning text-dark'
 
-    function handleRT(e) {
-        if (e.ui === 'swal') {
-            if (typeof Swal !== 'undefined') Swal.fire(e.swal);
-            return;
-        }
-
-        const t = e.toast || {};
-        const level = (e.level || t.level || '').toLowerCase(); // 'danger' | 'warning' | 'success' | 'info'
-        const classes = ['rt-toast'];
-        if (level) classes.push(`rt-${level}`);
-        if (t.className) classes.push(t.className); // ใช้ร่วมกับคลาส Bootstrap ได้ เช่น 'bg-warning text-dark'
-
-        Toastify({
-            text: e.message,
-            duration: t.duration ?? 20000,
-            newWindow: t.newWindow ?? true,
-            close: t.close ?? true,
-            gravity: t.gravity ?? 'top',      // 'top' | 'bottom'
-            position: t.position ?? 'right',  // 'left' | 'center' | 'right'
-            stopOnFocus: t.stopOnFocus ?? true,
-            className: classes.join(' '),
-            style: t.style || undefined,      // ส่ง style ตรง ๆ ได้ เช่น { background: '#dc2626' }
-        }).showToast();
-    }
-
-
-    Echo.channel('{{ config('app.name')  }}_events')
-        .listen('RealTimeMessage', (e) => {
             Toastify({
                 text: e.message,
-                duration: 20000,
-                newWindow: true,
-                close: true,
-                gravity: "top", // `top` or `bottom`
-                position: "right", // `left`, `center` or `right`
-                stopOnFocus: true, // Prevents dismissing of toast on hover
+                duration: t.duration ?? 20000,
+                newWindow: t.newWindow ?? true,
+                close: t.close ?? true,
+                gravity: t.gravity ?? 'top',      // 'top' | 'bottom'
+                position: t.position ?? 'right',  // 'left' | 'center' | 'right'
+                stopOnFocus: t.stopOnFocus ?? true,
+                className: classes.join(' '),
+                style: t.style || undefined,      // ส่ง style ตรง ๆ ได้ เช่น { background: '#dc2626' }
             }).showToast();
-            // window.Toasty.info(e.message);
-            // window.app.loadCnt();
-
-        })
-        .listen('.RealTime.Message.All', handleRT)
-        .listen('SumNewPayment', (e) => {
-            if (document.getElementById('badge_bank_in')) {
-                document.getElementById('badge_bank_in').textContent = e.sum;
-            }
-
-            if ($('#deposittable').length && $.fn.DataTable.isDataTable('#deposittable')) {
-
-                if (reloadTimer) clearTimeout(reloadTimer);
-                reloadTimer = setTimeout(() => {
-                    window.LaravelDataTables["deposittable"].draw(false);
-                }, 3000);
+        }
 
 
-            }
+        Echo.channel('{{ config('app.name')  }}_events')
+            .listen('RealTimeMessage', (e) => {
+                Toastify({
+                    text: e.message,
+                    duration: 20000,
+                    newWindow: true,
+                    close: true,
+                    gravity: "top", // `top` or `bottom`
+                    position: "right", // `left`, `center` or `right`
+                    stopOnFocus: true, // Prevents dismissing of toast on hover
+                }).showToast();
+                // window.Toasty.info(e.message);
+                // window.app.loadCnt();
 
-        })
-        .listen('SumNewWithdraw', (e) => {
-            if (document.getElementById('badge_withdraw')) {
-                document.getElementById('badge_withdraw').textContent = e.sum;
-            }
-            if (document.getElementById('badge_withdraw_seamless')) {
-                document.getElementById('badge_withdraw_seamless').textContent = e.sum;
-            }
+            })
+            .listen('.RealTime.Message.All', handleRT)
+            .listen('SumNewPayment', (e) => {
+                if (document.getElementById('badge_bank_in')) {
+                    document.getElementById('badge_bank_in').textContent = e.sum;
+                }
 
-            if (e.type === 'up') {
-                let count = 0;
-                const intervalId = setInterval(() => {
-                    // แสดงแจ้งเตือน
-                    window.Toasty.error('<span class="text-danger">มีการ แจ้งถอนรายการใหม่</span>');
+                if ($('#deposittable').length && $.fn.DataTable.isDataTable('#deposittable')) {
 
-                    // เพิ่มตัวนับ
-                    count++;
+                    if (reloadTimer) clearTimeout(reloadTimer);
+                    reloadTimer = setTimeout(() => {
+                        window.LaravelDataTables["deposittable"].draw(false);
+                    }, 3000);
 
-                    // ตรวจสอบว่าแจ้งเตือนครบ 5 รอบหรือยัง
-                    if (count === 2) {
-                        // หยุดตัวจับเวลา
-                        clearInterval(intervalId);
-                    }
-                }, 3000);  // 1000 มิลลิวินาที คือ 1 วินาที
 
-            }
+                }
 
-            if ($('#withdrawtable').length && $.fn.DataTable.isDataTable('#withdrawtable')) {
-                window.LaravelDataTables["withdrawtable"].draw(true);
-            }
-        })
-        .listen('SumNewWithdrawFree', (e) => {
-            if (document.getElementById('badge_withdraw_free')) {
-                document.getElementById('badge_withdraw_free').textContent = e.sum;
-            }
-            if (document.getElementById('badge_withdraw_seamless_free')) {
-                document.getElementById('badge_withdraw_seamless_free').textContent = e.sum;
-            }
+            })
+            .listen('SumNewWithdraw', (e) => {
+                if (document.getElementById('badge_withdraw')) {
+                    document.getElementById('badge_withdraw').textContent = e.sum;
+                }
+                if (document.getElementById('badge_withdraw_seamless')) {
+                    document.getElementById('badge_withdraw_seamless').textContent = e.sum;
+                }
 
-            if (e.type === 'up') {
-                let count = 0;
-                const intervalId = setInterval(() => {
-                    // แสดงแจ้งเตือน
-                    window.Toasty.error('<span class="text-danger">มีการ แจ้งถอนรายการฟรี ใหม่</span>');
+                if (e.type === 'up') {
+                    let count = 0;
+                    const intervalId = setInterval(() => {
+                        // แสดงแจ้งเตือน
+                        window.Toasty.error('<span class="text-danger">มีการ แจ้งถอนรายการใหม่</span>');
 
-                    // เพิ่มตัวนับ
-                    count++;
+                        // เพิ่มตัวนับ
+                        count++;
 
-                    // ตรวจสอบว่าแจ้งเตือนครบ 5 รอบหรือยัง
-                    if (count === 2) {
-                        // หยุดตัวจับเวลา
-                        clearInterval(intervalId);
-                    }
-                }, 3000);  // 1000 มิลลิวินาที คือ 1 วินาที
+                        // ตรวจสอบว่าแจ้งเตือนครบ 5 รอบหรือยัง
+                        if (count === 2) {
+                            // หยุดตัวจับเวลา
+                            clearInterval(intervalId);
+                        }
+                    }, 3000);  // 1000 มิลลิวินาที คือ 1 วินาที
 
-            }
+                }
 
-            if ($('#withdrawfreetable').length && $.fn.DataTable.isDataTable('#withdrawfreetable')) {
-                window.LaravelDataTables["withdrawfreetable"].draw(true);
-            }
-        });
+                if ($('#withdrawtable').length && $.fn.DataTable.isDataTable('#withdrawtable')) {
+                    window.LaravelDataTables["withdrawtable"].draw(true);
+                }
+            })
+            .listen('SumNewWithdrawFree', (e) => {
+                if (document.getElementById('badge_withdraw_free')) {
+                    document.getElementById('badge_withdraw_free').textContent = e.sum;
+                }
+                if (document.getElementById('badge_withdraw_seamless_free')) {
+                    document.getElementById('badge_withdraw_seamless_free').textContent = e.sum;
+                }
 
-    Echo.channel('global')
-        .listen('RealTimeMessageAll', (e) => {
-            Swal.fire(e.message);
+                if (e.type === 'up') {
+                    let count = 0;
+                    const intervalId = setInterval(() => {
+                        // แสดงแจ้งเตือน
+                        window.Toasty.error('<span class="text-danger">มีการ แจ้งถอนรายการฟรี ใหม่</span>');
 
-        });
+                        // เพิ่มตัวนับ
+                        count++;
+
+                        // ตรวจสอบว่าแจ้งเตือนครบ 5 รอบหรือยัง
+                        if (count === 2) {
+                            // หยุดตัวจับเวลา
+                            clearInterval(intervalId);
+                        }
+                    }, 3000);  // 1000 มิลลิวินาที คือ 1 วินาที
+
+                }
+
+                if ($('#withdrawfreetable').length && $.fn.DataTable.isDataTable('#withdrawfreetable')) {
+                    window.LaravelDataTables["withdrawfreetable"].draw(true);
+                }
+            });
+
+        Echo.channel('global')
+            .listen('RealTimeMessageAll', (e) => {
+                Swal.fire(e.message);
+
+            });
+    } else {
+        try { window.Echo && typeof window.Echo.disconnect === 'function' && window.Echo.disconnect(); } catch(e) {}
+    }
+</script>
+
+<script type="text/javascript">
 
     $(document).ready(function () {
         if ($('#dataTableBuilder').length && $.fn.DataTable.isDataTable('#dataTableBuilder')) {
@@ -361,16 +349,25 @@
 
     });
 
-
-    {{--const private_channel = 'admins.{{ auth()->guard('admin')->user()->code }}';--}}
-    {{--Echo.private(private_channel)--}}
-    {{--    .notification((notification) => {--}}
-    //         Toast.fire({
-    //             icon: 'success',
-    //             title: notification.message
-    //         });
-    {{--    });--}}
 </script>
+
+
+<script>
+    window.blockOn = function(){
+        $('#app-blocker').removeClass('d-none');
+        document.body.classList.add('is-blocking');
+    };
+    window.blockOff = function(){
+        $('#app-blocker').addClass('d-none');
+        document.body.classList.remove('is-blocking');
+    };
+    window.blockToggle = function(){
+        ($('#app-blocker').hasClass('d-none') ? blockOn : blockOff)();
+    };
+    console.log('Blocker ready: blockOn(), blockOff(), blockToggle()');
+</script>
+
+
 
 <script defer>
     document.addEventListener('DOMContentLoaded', function () {

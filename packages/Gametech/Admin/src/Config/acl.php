@@ -93,422 +93,114 @@ return [
         'sort' => 4
     ], [
         'key' => 'bank_in.delete',
-        'name' => 'สิทธิ์ ลบ ธนาคารเงินเข้า',
+        'name' => 'สิทธิ์ ลบ รายการฝาห',
         'route' => 'admin.bank_in.delete',
         'sort' => 5
     ], [
-        'key' => 'bank_out',
-        'name' => 'รายการ เงินออก',
-        'route' => 'admin.bank_out.index',
+        'key' => 'withdraw',
+        'name' => 'รายการ แจ้งถอน',
+        'route' => 'admin.withdraw.index',
         'sort' => 3
     ], [
-        'key' => 'bank_out.clear',
-        'name' => 'สิทธิ์ เคลียร์ รายการ เงินออก',
-        'route' => 'admin.bank_out.clear',
+        'key' => 'withdraw.create',
+        'name' => 'สิทธิ์ สร้าง รายการแจ้งถอน',
+        'route' => 'admin.withdraw.create',
         'sort' => 1
     ], [
-        'key' => 'bank_out.delete',
-        'name' => 'สิทธิ์ ลบ รายการ เงินออก',
-        'route' => 'admin.bank_out.delete',
+        'key' => 'withdraw.update',
+        'name' => 'สิทธิ์ ตัดยอด รายการแจ้งถอน',
+        'route' => 'admin.withdraw.update',
         'sort' => 2
     ], [
-        'key' => 'withdraw',
-        'name' => 'รายการ ถอนเงิน',
-        'route' => 'admin.withdraw.index',
-        'sort' => 4
-    ], [
-        'key' => 'withdraw.edit',
-        'name' => 'สิทธิ์ อนุมัติรายการถอน',
-        'route' => 'admin.withdraw.edit',
-        'sort' => 1
-    ], [
-        'key' => 'withdraw.clear',
-        'name' => 'สิทธิ์ คืนยอดรายการถอน',
-        'route' => 'admin.withdraw.clear',
-        'sort' => 2
+        'key' => 'withdraw.approve',
+        'name' => 'สิทธิ์ อนุมัติ รายการแจ้งถอน',
+        'route' => 'admin.withdraw.update',
+        'sort' => 3
     ], [
         'key' => 'withdraw.delete',
-        'name' => 'สิทธิ์ ลบรายการถอน',
+        'name' => 'สิทธิ์ ลบ รายการถอน',
         'route' => 'admin.withdraw.delete',
-        'sort' => 3
-    ], [
-        'key' => 'withdraw_free',
-        'name' => 'รายการ ถอนเงิน [Free]',
-        'route' => 'admin.withdraw_free.index',
-        'sort' => 5
-    ], [
-        'key' => 'withdraw_free.edit',
-        'name' => 'สิทธิ์ อนุมัติรายการถอน [Free]',
-        'route' => 'admin.withdraw_free.edit',
-        'sort' => 1
-    ], [
-        'key' => 'withdraw_free.clear',
-        'name' => 'สิทธิ์ คืนยอดรายการถอน [Free]',
-        'route' => 'admin.withdraw_free.clear',
-        'sort' => 2
-    ], [
-        'key' => 'withdraw_free.delete',
-        'name' => 'สิทธิ์ ลบรายการถอน [Free]',
-        'route' => 'admin.withdraw_free.delete',
-        'sort' => 3
-    ], [
-        'key' => 'confirm_wallet',
-        'name' => 'รออนุมัติการโยกเงิน',
-        'route' => 'admin.confirm_wallet.index',
-        'sort' => 6
-    ], [
-        'key' => 'confirm_wallet.edit',
-        'name' => 'สิทธิ์ อนุมัติการโยกเงิน',
-        'route' => 'admin.confirm_wallet.edit',
-        'sort' => 1
-    ], [
-        'key' => 'confirm_wallet.clear',
-        'name' => 'สิทธิ์ คืนยอดการโยกเงิน',
-        'route' => 'admin.confirm_wallet.clear',
-        'sort' => 2
-    ], [
-        'key' => 'confirm_wallet.delete',
-        'name' => 'สิทธิ์ ลบรายการโยกเงิน',
-        'route' => 'admin.confirm_wallet.delete',
-        'sort' => 3
-    ], [
-        'key' => 'fix',
-        'name' => 'การแก้ไขเบื้องต้น',
-        'route' => 'admin.fix.index',
-        'sort' => 8
-    ], [
-        'key' => 'payment',
-        'name' => 'ค่าใช้จ่าย',
-        'route' => 'admin.payment.index',
-        'sort' => 10
-    ], [
-        'key' => 'payment.create',
-        'name' => 'เพิ่ม ค่าใช้จ่าย',
-        'route' => 'admin.payment.create',
-        'sort' => 1
-    ], [
-        'key' => 'payment.update',
-        'name' => 'แก้ไข ค่าใช้จ่าย',
-        'route' => 'admin.payment.update',
-        'sort' => 2
-    ], [
-        'key' => 'payment.delete',
-        'name' => 'ลบ ค่าใช้จ่าย',
-        'route' => 'admin.payment.delete',
-        'sort' => 3
-    ], [
-        'key' => 'member_confirm',
-        'name' => 'สมาชิกรอยืนยัน',
-        'route' => 'admin.member_confirm.index',
-        'sort' => 15
-    ], [
-        'key' => 'member_confirm.update',
-        'name' => 'สิทธิ์ อนุมัติ',
-        'route' => 'admin.member_confirm.update',
-        'sort' => 1
-    ], [
-        'key' => 'member_confirm.delete',
-        'name' => 'สิทธิ์ ลบข้อมูล',
-        'route' => 'admin.member_confirm.delete',
-        'sort' => 2
-    ], [
-        'key' => 'member_confirm.tel',
-        'name' => 'สิทธิ์ เห็นเบอร์โทร',
-        'route' => 'admin.member_confirm.index',
-        'sort' => 3
-
-    ], [
-        'key' => 'wallet',
-        'name' => 'Members',
-        'route' => 'admin.member.index',
-        'sort' => 20
-    ], [
-        'key' => 'wallet.member',
-        'name' => 'สมาชิก (Wallet)',
-        'route' => 'admin.member.index',
-        'sort' => 1
-
-    ], [
-        'key' => 'wallet.member.refill',
-        'name' => 'สิทธิ์ เพิ่มรายการฝาก',
-        'route' => 'admin.member.refill',
-        'sort' => 1
-    ], [
-        'key' => 'wallet.member.setwallet',
-        'name' => 'สิทธิ์ เพิ่มลด Wallet',
-        'route' => 'admin.member.setwallet',
-        'sort' => 2
-    ], [
-        'key' => 'wallet.member.setpoint',
-        'name' => 'สิทธิ์ เพิ่มลด Point',
-        'route' => 'admin.member.setpoint',
-        'sort' => 3
-    ], [
-        'key' => 'wallet.member.setdiamond',
-        'name' => 'สิทธิ์ เพิ่มลด Diamond',
-        'route' => 'admin.member.setdiamond',
         'sort' => 4
     ], [
-        'key' => 'wallet.member.update',
-        'name' => 'สิทธิ์ แก้ไขข้อมูล สมาชิก',
+        'key' => 'member',
+        'name' => 'ข้อมูลสมาชิก',
+        'route' => 'admin.member.index',
+        'sort' => 4
+    ], [
+        'key' => 'member.index',
+        'name' => 'สิทธิ์เข้า เมนู ข้อมูลสมาชิก',
+        'route' => 'admin.member.index',
+        'sort' => 1
+    ], [
+        'key' => 'member.create',
+        'name' => 'สิทธิ์ เพิ่ม ข้อมูลสมาชิก',
+        'route' => 'admin.member.create',
+        'sort' => 2
+    ], [
+        'key' => 'member.update',
+        'name' => 'สิทธิ์ แก้ไข ข้อมูลสมาชิก',
         'route' => 'admin.member.update',
-        'sort' => 5
+        'sort' => 3
     ], [
-        'key' => 'wallet.member.delete',
-        'name' => 'สิทธิ์ ลบข้อมูล สมาชิก',
+        'key' => 'member.delete',
+        'name' => 'สิทธิ์ ลบ ข้อมูลสมาชิก',
         'route' => 'admin.member.delete',
-        'sort' => 6
-    ], [
-        'key' => 'wallet.member.index',
-        'name' => 'สิทธิ์ เห็นข้อมูล',
-        'route' => 'admin.member.index',
-        'sort' => 7
-    ], [
-        'key' => 'wallet.member.tel',
-        'name' => 'สิทธิ์ เห็นเบอร์โทร',
-        'route' => '',
-        'sort' => 8
-    ], [
-        'key' => 'wallet.rp_wallet',
-        'name' => 'รายงาน เพิ่ม-ลด (Wallet)',
-        'route' => 'admin.rp_wallet.index',
-        'sort' => 2
-    ], [
-        'key' => 'wallet.rp_bill',
-        'name' => 'รายงาน โยกเงิน (Wallet)',
-        'route' => 'admin.rp_bill.index',
-        'sort' => 3
-    ], [
-        'key' => 'wallet.rp_deposit',
-        'name' => 'รายงาน ฝากเงิน (Wallet)',
-        'route' => 'admin.rp_deposit.index',
         'sort' => 4
-    ], [
-        'key' => 'wallet.rp_withdraw',
-        'name' => 'รายงาน ถอนเงิน (Wallet)',
-        'route' => 'admin.rp_withdraw.index',
-        'sort' => 5
-    ], [
-        'key' => 'wallet.rp_setpoint',
-        'name' => 'รายงาน เพิ่ม-ลด (Point)',
-        'route' => 'admin.rp_setpoint.index',
-        'sort' => 6,
-
-    ], [
-        'key' => 'wallet.rp_setdiamond',
-        'name' => 'รายงาน เพิ่ม-ลด (Diamond)',
-        'route' => 'admin.rp_setdiamond.index',
-        'sort' => 7,
-
-    ], [
-        'key' => 'credit',
-        'name' => 'Members Cashback',
-        'route' => 'admin.member_free.index',
-        'sort' => 30
-    ], [
-        'key' => 'credit.member_free',
-        'name' => 'สมาชิก (Credit)',
-        'route' => 'admin.member_free.index',
-        'sort' => 1
-
-    ], [
-        'key' => 'credit.member_free.setwallet',
-        'name' => 'สิทธิ์ เพิ่มลด Credit',
-        'route' => 'admin.member_free.setwallet',
-        'sort' => 1
-    ], [
-        'key' => 'credit.rp_credit',
-        'name' => 'รายงาน เพิ่ม-ลด (Credit)',
-        'route' => 'admin.rp_credit.index',
-        'sort' => 2
-    ], [
-        'key' => 'credit.rp_bill_free',
-        'name' => 'รายงาน โยกเงิน (Credit)',
-        'route' => 'admin.rp_bill_free.index',
-        'sort' => 3
-    ], [
-        'key' => 'credit.rp_withdraw_free',
-        'name' => 'รายงาน ถอนเงิน (Credit)',
-        'route' => 'admin.rp_withdraw_free.index',
-        'sort' => 4
-    ], [
-        'key' => 'credit.rp_log_cashback',
-        'name' => 'รายงาน เครดิตเงินคืน',
-        'route' => 'admin.rp_log_cashback.index',
-        'sort' => 5
-    ], [
-        'key' => 'credit.rp_log_ic',
-        'name' => 'รายงาน หุ้นส่วน IC',
-        'route' => 'admin.rp_log_ic.index',
-        'sort' => 6
-    ], [
-        'key' => 'mop',
-        'name' => 'รายงาน (กิจกรรม)',
-        'route' => 'admin.rp_reward_point.index',
-        'sort' => 40
-    ], [
-        'key' => 'mop.rp_reward_point',
-        'name' => 'Point Reward',
-        'route' => 'admin.rp_reward_point.index',
-        'sort' => 1
-    ], [
-        'key' => 'mop.rp_cashback',
-        'name' => 'Cashback',
-        'route' => 'admin.rp_cashback.index',
-        'sort' => 2
-    ], [
-        'key' => 'mop.rp_member_ic',
-        'name' => 'Member IC',
-        'route' => 'admin.rp_member_ic.index',
-        'sort' => 3
-    ], [
-        'key' => 'mop.rp_top_promotion',
-        'name' => 'โปรยอดนิยม',
-        'route' => 'admin.rp_top_promotion.index',
-        'sort' => 4
-    ], [
-        'key' => 'mep',
-        'name' => 'รายงานสมาชิก',
-        'route' => 'admin.rp_billturn.index',
-        'sort' => 50
-    ], [
-        'key' => 'mep.rp_billturn',
-        'name' => 'ทำเทรินโยกออก',
-        'route' => 'admin.rp_billturn.index',
-        'sort' => 1
-    ], [
-        'key' => 'mep.rp_spin',
-        'name' => 'การหมุนวงล้อ',
-        'route' => 'admin.rp_spin.index',
-        'sort' => 2
-    ], [
-        'key' => 'mep.rp_sponsor',
-        'name' => 'แนะนำเพื่อน',
-        'route' => 'admin.rp_sponsor.index',
-        'sort' => 3
-    ], [
-        'key' => 'mep.rp_member_ref',
-        'name' => 'ที่มาการสมัคร',
-        'route' => 'admin.rp_member_ref.index',
-        'sort' => 4
-    ], [
-        'key' => 'mep.rp_online_behavior',
-        'name' => 'Online Behavior',
-        'route' => 'admin.rp_online_behavior.index',
-        'sort' => 5
-    ], [
-        'key' => 'mep.rp_user_log',
-        'name' => 'Activity Log',
-        'route' => 'admin.rp_user_log.index',
-        'sort' => 6
-    ], [
-        'key' => 'mon',
-        'name' => 'รายงานการเงิน',
-        'route' => 'admin.rp_alllog.index',
-        'sort' => 60
-    ], [
-        'key' => 'mon.rp_alllog',
-        'name' => 'All Log',
-        'route' => 'admin.rp_alllog.index',
-        'sort' => 1,
-
-    ], [
-        'key' => 'mon.rp_sum_game',
-        'name' => 'สรุปยอดแต่ละเกมส์',
-        'route' => 'admin.rp_sum_game.index',
-        'sort' => 2,
-
-    ], [
-        'key' => 'mon.rp_sum_stat',
-        'name' => 'สรุปยอดรายเดือน',
-        'route' => 'admin.rp_sum_stat.index',
-        'sort' => 3,
-
-    ], [
-        'key' => 'mon.rp_sum_payment',
-        'name' => 'สรุปยอดค่าใช้จ่าย',
-        'route' => 'admin.rp_sum_payment.index',
-        'sort' => 4,
-    ], [
-        'key' => 'mon.rp_top_payment',
-        'name' => 'ฝากถอน 100 อันดับ',
-        'route' => 'admin.rp_top_payment.index',
-        'sort' => 5,
-    ], [
-        'key' => 'mon.rp_no_refill',
-        'name' => 'สมาชิกไม่เติมเงิน',
-        'route' => 'admin.rp_no_refill.index',
-        'sort' => 6,
-    ], [
-        'key' => 'mon.rp_summary',
-        'name' => 'สรุปทั้งหมด',
-        'route' => 'admin.rp_summary.index',
-        'sort' => 7,
     ], [
         'key' => 'ats',
         'name' => 'ตั้งค่าบัญชี',
         'route' => 'admin.bank_account_in.index',
-        'sort' => 70
+        'sort' => 5
     ], [
         'key' => 'ats.bank_account_in',
         'name' => 'บัญชีรับเข้า',
         'route' => 'admin.bank_account_in.index',
         'sort' => 1
     ], [
-        'key' => 'ats.bank_account_in.create',
-        'name' => 'เพิ่มบัญชีรับเข้า',
-        'route' => 'admin.bank_account_in.create',
-        'sort' => 1,
+        'key' => 'ats.bank_account_in.index',
+        'name' => 'สิทธิ์เข้า เมนู บัญชีรับเข้า',
+        'route' => 'admin.bank_account_in.index',
+        'sort' => 1
     ], [
-        'key' => 'ats.bank_account_in.update',
-        'name' => 'แก้ไขบัญชีรับเข้า',
-        'route' => 'admin.bank_account_in.update',
+        'key' => 'ats.bank_account_in.create',
+        'name' => 'สิทธิ์ เพิ่มบัญชีรับเข้า',
+        'route' => 'admin.bank_account_in.create',
         'sort' => 2,
     ], [
-        'key' => 'ats.bank_account_in.delete',
-        'name' => 'ลบบัญชีรับเข้า',
-        'route' => 'admin.bank_account_in.delete',
+        'key' => 'ats.bank_account_in.update',
+        'name' => 'สิทธิ์ แก้ไขบัญชีรับเข้า',
+        'route' => 'admin.bank_account_in.update',
         'sort' => 3,
     ], [
-        'key' => 'ats.bank_account_in.index',
-        'name' => 'สิทธิ์ เห็นข้อมูล',
-        'route' => 'admin.bank_account_in.index',
-        'sort' => 4
-    ], [
-        'key' => 'ats.bank_account_in.tel',
-        'name' => 'สิทธิ์ เห็น User Pass',
-        'route' => '',
-        'sort' => 5
+        'key' => 'ats.bank_account_in.delete',
+        'name' => 'สิทธิ์ ลบบัญชีรับเข้า',
+        'route' => 'admin.bank_account_in.delete',
+        'sort' => 4,
     ], [
         'key' => 'ats.bank_account_out',
         'name' => 'บัญชีถอนออก',
         'route' => 'admin.bank_account_out.index',
         'sort' => 2
     ], [
-        'key' => 'ats.bank_account_out.create',
-        'name' => 'เพิ่มบัญชีถอนออก',
-        'route' => 'admin.bank_account_out.create',
-        'sort' => 1,
+        'key' => 'ats.bank_account_out.index',
+        'name' => 'สิทธิ์เข้า เมนู บัญชี ถอน',
+        'route' => 'admin.bank_account_out.index',
+        'sort' => 1
     ], [
-        'key' => 'ats.bank_account_out.update',
-        'name' => 'แก้ไขบัญชีถอนออก',
-        'route' => 'admin.bank_account_out.update',
+        'key' => 'ats.bank_account_out.create',
+        'name' => 'สิทธิ์ เพิ่มบัญชีถอนออก',
+        'route' => 'admin.bank_account_out.create',
         'sort' => 2,
     ], [
-        'key' => 'ats.bank_account_out.delete',
-        'name' => 'ลบบัญชีถอนออก',
-        'route' => 'admin.bank_account_out.delete',
+        'key' => 'ats.bank_account_out.update',
+        'name' => 'สิทธิ์ แก้ไขบัญชีถอนออก',
+        'route' => 'admin.bank_account_out.update',
         'sort' => 3,
     ], [
-        'key' => 'ats.bank_account_out.index',
-        'name' => 'สิทธิ์ เห็นข้อมูล',
-        'route' => 'admin.bank_account_out.index',
-        'sort' => 4
-    ], [
-        'key' => 'ats.bank_account_out.tel',
-        'name' => 'สิทธิ์ เห็น User Pass',
-        'route' => '',
-        'sort' => 5
+        'key' => 'ats.bank_account_out.delete',
+        'name' => 'สิทธิ์ ลบบัญชีถอนออก',
+        'route' => 'admin.bank_account_out.delete',
+        'sort' => 4,
     ], [
         'key' => 'top',
         'name' => 'เกมส์ & โปรโมชั่น',

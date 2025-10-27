@@ -3,6 +3,7 @@
 namespace Gametech\Payment\Repositories;
 
 use Gametech\Core\Eloquent\Repository;
+use Gametech\Payment\Models\BankAccount;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -68,7 +69,7 @@ class BankAccountRepository extends Repository
 
     public function getAccountOutAll()
     {
-        return $this->out()->active()->with('banks')->whereHas('banks')->get();
+        return $this->out()->active()->with('banks')->whereHas('banks')->orderBy('code','asc')->get();
 
     }
 
@@ -177,9 +178,21 @@ class BankAccountRepository extends Repository
      */
     function model()
     {
-        return 'Gametech\Payment\Contracts\BankAccount';
+        return \Gametech\Payment\Models\BankAccount::class;
     }
 
+    public function findActiveByCode(string|int $code, ?int $webcode = null)
+    {
+        $query = BankAccount::where('enable', 'Y')
+            ->where('code', $code)
+            ->where('status', 2); // สมมติ 1 = active
+
+//        if ($webcode !== null) {
+//            $query->where('webcode', $webcode);
+//        }
+
+        return $query->first();
+    }
 
     public function createnew(array $data)
     {

@@ -26,25 +26,29 @@ class WithdrawTransformer extends TransformerAbstract
         return '';
     }
 
-    protected function buildDeductHtml(int $code, int $status): string
+    protected function buildDeductHtml(int $code, int $status, string $ck_withdraw, string $checkUser, string $checktime): string
     {
-        if ($status === 0) {
+        if ($status === 0 && $ck_withdraw === 'N') {
             return '<button class="btn btn-xs btn-warning icon-only" onclick="DeductModal('.$code.')"><i class="fas fa-dollar"></i></button>';
         }
-        return '';
-    }
 
-    protected function buildApproveHtml(int $code, int $status): string
-    {
-        if ($status === 0) {
-            return '<button class="btn btn-xs btn-secondary icon-only" onclick="ApproveModal('.$code.')"><i class="fas fa-plus"></i></button>';
+        if ($status === 0 && $ck_withdraw === 'Y') {
+            return '[ '.$checkUser.' ]<br>'.$checktime;
         }
         return '';
     }
 
-    protected function buildDeleteHtml(int $code, int $status): string
+    protected function buildApproveHtml(int $code, int $status, string $ck_withdraw): string
     {
-        if ($status === 0) {
+        if ($status === 0 && $ck_withdraw === 'Y') {
+            return '<button class="btn btn-xs btn-secondary icon-only" onclick="ApproveModal('.$code.')"><i class="fas fa-plus"></i></button>';
+        }
+        return 'Pending';
+    }
+
+    protected function buildDeleteHtml(int $code, int $status,string $ck_withdraw): string
+    {
+        if ($status === 0 && $ck_withdraw === 'N') {
             return '<button class="btn btn-xs btn-danger icon-only" onclick="delModal('.$code.')"><i class="fas fa-trash"></i></button>';
         }
         return '';
@@ -69,6 +73,9 @@ class WithdrawTransformer extends TransformerAbstract
         $code    = (int)$model->code;
         $status  = (int)($model->status ?? 0);
         $empCode = ($model->user_create ?? '');
+        $ck_withdraw = ($model->ck_withdraw ?? 'Y');
+        $checkUser      = (string) ($model->ck_user ?? '');
+        $checktime =  core()->formatDate($model->ck_date,'d/m/y H:i:s');
 
         // --- โลโก้ธนาคาร + เลขบัญชี ---
         static $bankCache = [];
@@ -125,9 +132,9 @@ class WithdrawTransformer extends TransformerAbstract
         );
 
         // --- ปุ่มยืนยัน/ยกเลิก/ลบ (inline HTML) ---
-        $waitingHtml = $this->buildDeductHtml($code, $status);
-        $approveHtml  = $this->buildApproveHtml($code, $status);
-        $deleteHtml  = $this->buildDeleteHtml($code, $status);
+        $waitingHtml = $this->buildDeductHtml($code, $status,$ck_withdraw,$checkUser,$checktime);
+        $approveHtml  = $this->buildApproveHtml($code, $status,$ck_withdraw);
+        $deleteHtml  = $this->buildDeleteHtml($code, $status,$ck_withdraw);
 
         return [
             'code'               => $code,

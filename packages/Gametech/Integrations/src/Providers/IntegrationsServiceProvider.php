@@ -51,6 +51,7 @@ class IntegrationsServiceProvider extends ServiceProvider
                 $app->make(AclAuthorizer::class),
                 $app->make(\Gametech\Payment\Repositories\WithdrawRepository::class),
                 $app->make(ConfigStore::class),
+                $app->make(\Gametech\Payment\Repositories\BankAccountRepository::class),
             );
         });
     }

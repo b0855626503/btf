@@ -172,7 +172,7 @@ class WithdrawController extends AppBaseController
             'transection_type' => 1,
             'status_withdraw' => 'W',            // waiting
             'enable' => 'Y',
-            'user_create' => $admin->name,
+            'user_create' => $admin->user_name,
             'ck_step1' => $admin->code,    // ผู้สร้าง
             'ip' => $request->ip(),
         ];
@@ -184,7 +184,7 @@ class WithdrawController extends AppBaseController
             return $this->sendError('สร้างรายการแจ้งถอน ไม่สำเร็จ', 200);
         }
 
-        return $this->sendSuccess('สร้างรายการแจ้งถอนเรียบร้อย (ตัดยอด/เติมตามขั้นตอน)');
+        return $this->sendSuccess('สร้างรายการแจ้งถอนเรียบร้อย (ตัดเครดิต/เติมตามขั้นตอน)');
 
     }
 
@@ -193,7 +193,7 @@ class WithdrawController extends AppBaseController
         $admin = $this->user();
         $id = (int)$request->input('id');
 
-        $res = $flow->approve($id, $admin);
+        $res = $flow->post($id, $admin);
         if (!($res['success'] ?? false)) {
             return $this->sendError($res['msg'] ?? 'มีปัญหาบางประการ ในการทำรายการ', 200);
         }
@@ -269,22 +269,22 @@ class WithdrawController extends AppBaseController
 
     public function loadBank()
     {
-        $banks = [
-            'value' => '0',
-            'text' => 'ไม่ระบุบัญชี',
-        ];
-
         $responses = app('Gametech\Payment\Repositories\BankAccountRepository')
             ->getAccountOutAll()
             ->toArray();
 
+//        dd($responses);
+
         $responses = collect($responses)->map(function ($items) {
             $item = (object)$items;
+//            dd($item);
             return [
                 'value' => $item->code,
-                'text' => $item->bank['name_th'] . ' [' . $item->acc_no . '] ' . $item->acc_name,
+                'text' => strtoupper($item->bank) . ' - ' . $item->accountno . ' [' . $item->accountname . '] - '.$item->balance
             ];
-        })->prepend($banks);
+
+        });
+
 
         $result['banks'] = $responses;
 
@@ -356,16 +356,35 @@ class WithdrawController extends AppBaseController
         ], 'พบข้อมูลสมาชิก + ยอดคงเหลือล่าสุดจาก provider');
     }
 
+    // Controller
     public function approve(Request $request, WithdrawOrchestrator $flow)
     {
         $admin = $this->user();
         $id = (int)$request->input('id');
 
+        // (ออปชัน) รวมวัน+เวลาเป็น timestamp เดียว ฝั่งฟอร์มสามารถส่ง transfer_at มาเลยก็ได้
+        $transferAt = $request->input('transfer_at');
+        if (!$transferAt) {
+            $d = $request->input('date_bank'); // 'YYYY-MM-DD'
+            $t = $request->input('time_bank'); // 'HH:mm'
+            if ($d && $t) {
+                $transferAt = \Carbon\Carbon::parse("$d $t:00")->toDateTimeString();
+            }
+        }
 
-        $res = $flow->confirm((int)$id, $admin);
+        $dto = [
+            'account_code' => $request->input('account_code'),   // บัญชีที่ใช้ดำเนินการ
+            'fee' => (float)$request->input('fee', 0),
+            'transfer_at' => $transferAt,
+            'date_bank' => $d,
+            'time_bank' => $t,
+        ];
+
+        $res = $flow->confirm($id, $admin, $dto);
         if (!($res['success'] ?? false)) {
             return $this->sendError($res['msg'] ?? 'ยืนยันล้มเหลว', 200);
         }
         return $this->sendSuccess('อนุมัติรายการ แจ้งถอน เรียบร้อยแล้ว');
     }
+
 }

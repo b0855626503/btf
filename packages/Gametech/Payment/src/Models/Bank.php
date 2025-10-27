@@ -40,6 +40,7 @@ class Bank extends Model implements BankContract
         'website',
         'filepic',
         'bank_pic',
+        'show_regis',
         'user_create',
         'user_update',
         'date_create',

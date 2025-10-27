@@ -43,6 +43,7 @@ class Withdraw extends Model implements WithdrawContract
         'webcode',
         'transection_type',
         'member_user',
+        'bank',
         'bankm',
         'bankout',
         'amount',
@@ -70,6 +71,8 @@ class Withdraw extends Model implements WithdrawContract
         'aftercredit',
         'ck_date',
         'ckb_date',
+        'webbefore',
+        'webafter',
     ];
 
 
